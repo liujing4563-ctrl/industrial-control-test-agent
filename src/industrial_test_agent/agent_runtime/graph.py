@@ -21,14 +21,23 @@ class GraphRunner:
         policy: Optional[PolicyValidator] = None,
         runner: Optional[MockRunner] = None,
         evidence_store: Optional[EvidenceStore] = None,
+        max_steps: int = 20,
+        required_evidence_count: int = 3,
     ) -> None:
         self.agent = agent or MockAgent()
         self.policy = policy or PolicyValidator()
         self.runner = runner or MockRunner()
         self.evidence_store = evidence_store or EvidenceStore()
+        self.max_steps = max_steps
+        self.required_evidence_count = required_evidence_count
 
         nodes.set_runtime_context(
-            self.agent, self.policy, self.runner, self.evidence_store
+            self.agent,
+            self.policy,
+            self.runner,
+            self.evidence_store,
+            max_steps=max_steps,
+            required_evidence_count=required_evidence_count,
         )
 
         # Execution log
@@ -44,7 +53,7 @@ class GraphRunner:
             "latest_observation_id": None,
             "evidence_ids": [],
             "hypothesis_ids": [],
-            "remaining_steps": 20,
+            "remaining_steps": self.max_steps,
             "termination_reason": None,
             "policy_decision": None,
         }

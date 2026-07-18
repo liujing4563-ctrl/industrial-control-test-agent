@@ -1,0 +1,32 @@
+# MCU UART 正常通信示例
+
+scenario_id: mcu_uart_normal
+name: "MCU UART 正常通信"
+description: "标准 UART 通信流程，所有步骤预期通过"
+
+steps:
+  - tool: mcu.read_heartbeat
+    expected:
+      status: "ok"
+      heartbeat_period_ms: 1000
+
+  - tool: mcu.send_uart_frame
+    arguments:
+      frame: [0x55, 0xAA, 0x01, 0x02]
+    expected:
+      sent: true
+
+  - tool: mcu.read_uart_response
+    expected:
+      received: true
+      length: 4
+      frame: [0x55, 0xAA, 0x01, 0x02]
+
+  - tool: mcu.read_gpio
+    arguments:
+      pins: ["PA0", "PA1"]
+    expected:
+      PA0: "high"
+      PA1: "low"
+
+expected_outcome: pass

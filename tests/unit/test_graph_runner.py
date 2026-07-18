@@ -13,11 +13,33 @@ from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 
 class TestGraphRunner:
     def test_normal_flow_completes(self):
-        runner = GraphRunner()
+        runner = GraphRunner(required_evidence_count=3)
         state = runner.run("case-001", "test goal")
         assert state["stage"] == "completed"
-        assert len(state["evidence_ids"]) >= 1
+        assert len(state["evidence_ids"]) >= 3
         assert "case completed" in runner.log[-1]
+
+    def test_evidence_sufficiency_triggers_completion(self):
+        """Graph completes when enough evidence is collected."""
+        runner = GraphRunner(required_evidence_count=2, max_steps=10)
+        state = runner.run("case-001", "test")
+        assert state["stage"] == "completed"
+        assert len(state["evidence_ids"]) >= 2
+        assert "evidence records collected" in state["termination_reason"]
+
+    def test_budget_exhausted_escalates(self):
+        """Graph escalates when step budget runs out before enough evidence."""
+        runner = GraphRunner(required_evidence_count=100, max_steps=2)
+        state = runner.run("case-001", "test")
+        assert state["stage"] == "escalated"
+        assert "budget" in state["termination_reason"].lower()
+
+    def test_configurable_max_steps(self):
+        """Verify max_steps is configurable and terminates correctly."""
+        runner = GraphRunner(required_evidence_count=1, max_steps=5)
+        state = runner.run("case-001", "test")
+        assert state["stage"] == "completed"
+        assert len(state["evidence_ids"]) >= 1
 
     def test_unknown_tool_rejected(self):
         agent = MockAgent(tool_name="unknown.bad_tool")

@@ -1,0 +1,77 @@
+# MCU UART 故障目录
+
+faults:
+  - fault_id: mcu_heartbeat_timeout
+    name: "MCU 心跳超时"
+    severity: critical
+    symptoms:
+      - "read_heartbeat 无响应"
+      - "超时时间超过 2000ms"
+    possible_causes:
+      - "MCU 掉电"
+      - "MCU 处于复位状态"
+      - "UART 连接线断开"
+      - "波特率配置错误导致无法解析心跳包"
+    diagnostic_steps:
+      - "检查 MCU 供电电压"
+      - "检查 RESET 引脚电平"
+      - "用示波器检查 UART TX 是否有信号"
+      - "确认波特率配置 (默认 115200)"
+    recovery:
+      - "重新给 MCU 上电"
+      - "确认连接线缆"
+      - "重新烧录固件"
+
+  - fault_id: mcu_baudrate_mismatch
+    name: "波特率不匹配"
+    severity: high
+    symptoms:
+      - "UART 接收数据乱码"
+      - "帧校验失败"
+    possible_causes:
+      - "MCU 与测试工具波特率不一致"
+      - "时钟源偏差过大"
+      - "固件中 UART 初始化参数错误"
+    diagnostic_steps:
+      - "用逻辑分析仪测量实际波特率"
+      - "检查 MCU 时钟配置"
+      - "尝试常用波特率逐一匹配 (9600/19200/38400/57600/115200)"
+    recovery:
+      - "修正波特率配置"
+      - "重新编译固件"
+
+  - fault_id: mcu_frame_loss
+    name: "UART 帧丢失"
+    severity: medium
+    symptoms:
+      - "发送帧后无响应"
+      - "响应帧长度不足"
+    possible_causes:
+      - "UART 接收缓冲区溢出"
+      - "MCU 主循环阻塞"
+      - "中断优先级冲突"
+    diagnostic_steps:
+      - "降低发送速率测试"
+      - "检查 MCU 是否在处理其他高优先级任务"
+      - "检查 UART 接收中断是否使能"
+    recovery:
+      - "增大 UART 接收缓冲区"
+      - "优化中断处理函数"
+
+  - fault_id: mcu_gpio_abnormal
+    name: "GPIO 状态异常"
+    severity: medium
+    symptoms:
+      - "GPIO 读取值与预期不符"
+      - "引脚电平异常"
+    possible_causes:
+      - "GPIO 模式配置错误 (输入/输出/复用)"
+      - "外部上拉/下拉电阻问题"
+      - "引脚短路或开路"
+    diagnostic_steps:
+      - "检查 GPIO 初始化代码"
+      - "测量引脚实际电压"
+      - "检查 PCB 焊接"
+    recovery:
+      - "修正 GPIO 配置"
+      - "修复硬件连接"

@@ -1,0 +1,20 @@
+# PLC 互锁阻塞示例
+
+scenario_id: plc_interlock_blocked
+name: "PLC 电机启动 — 互锁阻塞"
+description: "紧急停止按钮按下导致无法启动"
+
+steps:
+  - tool: plc.read_interlock
+    arguments:
+      group: motor_start
+    expected:
+      all_clear: false
+      interlocks:
+        estop: "triggered"
+        guard_door: "ok"
+        thermal: "ok"
+
+expected_outcome: fail
+expected_fault: plc_interlock_blocked
+recovery: "释放急停按钮后重新测试"

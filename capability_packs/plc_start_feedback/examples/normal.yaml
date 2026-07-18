@@ -1,0 +1,37 @@
+# PLC 正常启动反馈示例
+
+scenario_id: plc_start_normal
+name: "PLC 电机正常启动反馈"
+description: "标准电机启动反馈流程，互锁全部通过"
+
+steps:
+  - tool: plc.read_interlock
+    arguments:
+      group: motor_start
+    expected:
+      all_clear: true
+      interlocks:
+        estop: "ok"
+        guard_door: "ok"
+        thermal: "ok"
+
+  - tool: plc.write_test_signal
+    arguments:
+      signal_name: motor_start_cmd
+      value: true
+    expected:
+      success: true
+
+  - tool: plc.wait_feedback
+    arguments:
+      feedback_name: motor_running_fb
+      timeout_ms: 5000
+    expected:
+      received: true
+      latency_ms: "<500"
+
+  - tool: plc.reset_test_environment
+    expected:
+      success: true
+
+expected_outcome: pass

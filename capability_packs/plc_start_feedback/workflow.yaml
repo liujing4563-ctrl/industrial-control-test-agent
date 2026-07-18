@@ -1,0 +1,56 @@
+# PLC 电机启动反馈测试工作流
+
+steps:
+  - id: check_interlocks
+    tool: plc.read_interlock
+    description: "检查所有互锁条件 (急停/安全门/热保护)"
+    arguments:
+      group: motor_start
+    timeout_ms: 1000
+    on_failure: escalate
+
+  - id: send_start_signal
+    tool: plc.write_test_signal
+    description: "发送电机启动测试信号"
+    arguments:
+      signal_name: motor_start_cmd
+      value: true
+    timeout_ms: 500
+    requires_approval: true
+
+  - id: wait_feedback
+    tool: plc.wait_feedback
+    description: "等待电机启动反馈信号"
+    arguments:
+      feedback_name: motor_running_fb
+      timeout_ms: 5000
+    timeout_ms: 6000
+    on_timeout: diagnose_start_failure
+
+  - id: verify_output
+    tool: plc.read_signal
+    description: "确认电机运行信号"
+    arguments:
+      signal_name: motor_running
+    timeout_ms: 500
+
+  - id: reset_environment
+    tool: plc.reset_test_environment
+    description: "复位测试环境"
+    requires_approval: true
+
+evidence_collection:
+  - step: check_interlocks
+    record: interlock_snapshot
+  - step: send_start_signal
+    record: start_signal_record
+  - step: wait_feedback
+    record: feedback_timing
+  - step: verify_output
+    record: motor_status
+  - step: reset_environment
+    record: reset_confirmation
+
+regression:
+  after_change: "重新运行全部步骤（不含复位）"
+  minimum_pass_count: 1

@@ -1,0 +1,45 @@
+capability_pack_id: plc_start_feedback
+name: "PLC 电机启动反馈测试能力包"
+version: "0.1.0"
+domain: plc_io
+owner: "PLC 成员"
+approver: "系统负责人"
+status: draft
+risk_level: medium
+
+description: >
+  面向 PLC I/O 系统的电机启动反馈测试能力包。
+  覆盖互锁信号检查、启动信号输出、反馈信号等待、测试环境复位。
+
+supported_devices:
+  - "通用 PLC I/O 模块"
+
+required_mcp_tools:
+  - plc.read_signal
+  - plc.write_test_signal
+  - plc.read_interlock
+  - plc.wait_feedback
+  - plc.reset_test_environment
+
+permissions:
+  - read
+  - test_only_write
+
+evidence_requirements:
+  - "互锁状态快照"
+  - "启动信号输出记录"
+  - "反馈信号时序"
+  - "复位确认"
+
+success_criteria:
+  - "所有互锁条件满足"
+  - "电机启动反馈在规定时间内收到"
+  - "测试环境可正常复位"
+
+termination_criteria:
+  - "互锁条件不满足且不可修复"
+  - "反馈超时"
+  - "测试步骤全部完成"
+
+regression_requirements:
+  - "变更后重新运行全部 PLC I/O 测试"

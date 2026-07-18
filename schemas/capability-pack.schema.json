@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/capability-pack.schema.json",
+  "title": "CapabilityPack",
+  "type": "object",
+  "properties": {
+    "capabilityPackId": {"type": "string"},
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "domain": {"type": "string"},
+    "owner": {"type": "string"},
+    "status": {"type": "string"},
+    "riskLevel": {"type": "string"},
+    "requiredMcpTools": {"type": "array", "items": {"type": "string"}},
+    "evidenceRequirements": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["capabilityPackId", "name", "version", "domain", "owner", "status"],
+  "additionalProperties": false
+}

@@ -1,15 +1,34 @@
 # MCP Integration
 
-## MCP 角色
+## 关键链路
 
-- `Gateway`：统一入口，负责请求转发、认证、授权、限流与校验。
-- `Discovery`：发现可用工具与能力包。
-- `Clients`：封装与 MCP 工具交互的客户端。
+Agent
+→ ActionIntent
+→ Policy
+→ Runner
+→ MCP Gateway
+→ Test Service
+→ Protocol Driver
+→ Device
 
-## 安全与校验
+## MCP 不承担
 
-- 所有 MCP 调用必须进行输入 Schema 校验。
-- 所有返回结果必须进行输出 Schema 校验。
-- 仅允许白名单工具调用。
-- 必须限制地址、参数范围、超时和调用次数。
-- 写操作默认需要人工审批。
+- 硬实时控制
+- 设备安全与急停
+- 协议时序保证
+- 底层驱动错误恢复
+
+## MCP 注册信息
+
+- server_id
+- version
+- transport
+- tools
+- resources
+- input_schema
+- output_schema
+- permissions
+- network_scope
+- timeout_seconds
+- max_calls
+- environment_type

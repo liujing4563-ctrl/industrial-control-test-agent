@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/tool-capability.schema.json",
+  "title": "ToolCapability",
+  "type": "object",
+  "properties": {
+    "toolId": {"type": "string"},
+    "name": {"type": "string"},
+    "transport": {"type": "string"},
+    "inputSchema": {"type": "object"},
+    "outputSchema": {"type": "object"},
+    "permissions": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["toolId", "name", "transport", "inputSchema", "outputSchema"],
+  "additionalProperties": false
+}

@@ -6,15 +6,41 @@
   "properties": {
     "caseId": {"type": "string"},
     "testObjective": {"type": "string"},
-    "requirements": {"type": "array", "items": {"type": "string"}},
-    "testCases": {"type": "array", "items": {"type": "string"}},
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "description": {"type": "string"},
+          "status": {"type": "string"}
+        },
+        "required": ["id", "description"]
+      }
+    },
+    "testCases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "caseId": {"type": "string"},
+          "description": {"type": "string"},
+          "expectedOutcome": {"type": "string"},
+          "status": {"type": "string"}
+        },
+        "required": ["caseId", "description", "expectedOutcome"]
+      }
+    },
     "currentPhase": {"type": "string"},
     "evidenceIds": {"type": "array", "items": {"type": "string"}},
     "hypotheses": {"type": "array", "items": {"type": "string"}},
     "excludedCauses": {"type": "array", "items": {"type": "string"}},
     "remainingBudget": {"type": "number"},
     "approvalStatus": {"type": "string"},
-    "regressionStatus": {"type": "string"}
+    "regressionStatus": {"type": "string"},
+    "owner": {"type": "string"},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
   },
   "required": ["caseId", "testObjective", "currentPhase", "approvalStatus", "regressionStatus"],
   "additionalProperties": false

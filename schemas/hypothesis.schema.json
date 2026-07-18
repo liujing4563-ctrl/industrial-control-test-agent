@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/hypothesis.schema.json",
+  "title": "Hypothesis",
+  "type": "object",
+  "properties": {
+    "hypothesisId": {"type": "string"},
+    "caseId": {"type": "string"},
+    "description": {"type": "string"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "status": {"type": "string"},
+    "createdBy": {"type": "string"},
+    "createdAt": {"type": "string", "format": "date-time"}
+  },
+  "required": ["hypothesisId", "caseId", "description", "confidence", "createdBy", "createdAt"],
+  "additionalProperties": false
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/case-state.schema.json",
+  "title": "CaseState",
+  "type": "object",
+  "properties": {
+    "caseId": {"type": "string"},
+    "testObjective": {"type": "string"},
+    "requirements": {"type": "array", "items": {"type": "string"}},
+    "testCases": {"type": "array", "items": {"type": "string"}},
+    "currentPhase": {"type": "string"},
+    "evidenceIds": {"type": "array", "items": {"type": "string"}},
+    "hypotheses": {"type": "array", "items": {"type": "string"}},
+    "excludedCauses": {"type": "array", "items": {"type": "string"}},
+    "remainingBudget": {"type": "number"},
+    "approvalStatus": {"type": "string"},
+    "regressionStatus": {"type": "string"}
+  },
+  "required": ["caseId", "testObjective", "currentPhase", "approvalStatus", "regressionStatus"],
+  "additionalProperties": false
+}

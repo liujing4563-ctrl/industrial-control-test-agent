@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/capability-manifest.schema.json",
+  "title": "CapabilityManifest",
+  "type": "object",
+  "properties": {
+    "capabilityId": {"type": "string"},
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "description": {"type": "string"},
+    "providedActions": {"type": "array", "items": {"type": "string"}},
+    "requiredInputs": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["capabilityId", "name", "version", "description"],
+  "additionalProperties": false
+}

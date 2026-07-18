@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/observation.schema.json",
+  "title": "Observation",
+  "type": "object",
+  "properties": {
+    "observationId": {"type": "string"},
+    "caseId": {"type": "string"},
+    "source": {"type": "string"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "payload": {"type": "object"},
+    "schemaId": {"type": "string"}
+  },
+  "required": ["observationId", "caseId", "source", "timestamp", "payload", "schemaId"],
+  "additionalProperties": false
+}

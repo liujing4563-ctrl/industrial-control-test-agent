@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/action-intent.schema.json",
+  "title": "ActionIntent",
+  "type": "object",
+  "properties": {
+    "intentId": {"type": "string"},
+    "caseId": {"type": "string"},
+    "actionType": {"type": "string"},
+    "actionDetails": {"type": "object"},
+    "reason": {"type": "string"},
+    "requestedBy": {"type": "string"},
+    "priority": {"type": "string"},
+    "createdAt": {"type": "string", "format": "date-time"}
+  },
+  "required": ["intentId", "caseId", "actionType", "reason", "requestedBy", "createdAt"],
+  "additionalProperties": false
+}

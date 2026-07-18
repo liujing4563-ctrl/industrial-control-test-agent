@@ -1,0 +1,31 @@
+# PLC 信号映射错误示例
+
+scenario_id: plc_mapping_error
+name: "PLC 电机启动 — 信号映射错误"
+description: "PLC 地址映射配置错误导致读到错误信号"
+
+steps:
+  - tool: plc.read_interlock
+    arguments:
+      group: motor_start
+    expected:
+      all_clear: true
+
+  - tool: plc.write_test_signal
+    arguments:
+      signal_name: motor_start_cmd
+      value: true
+    expected:
+      success: true
+
+  - tool: plc.wait_feedback
+    arguments:
+      feedback_name: motor_running_fb
+      timeout_ms: 5000
+    expected:
+      received: false
+      symptom: "timeout_or_wrong_signal"
+
+expected_outcome: fail
+expected_fault: plc_signal_mapping_error
+recovery: "核对 PLC 地址分配表，修正信号映射"

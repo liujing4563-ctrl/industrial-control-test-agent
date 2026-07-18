@@ -1,0 +1,45 @@
+# MCU UART 测试工作流
+
+steps:
+  - id: check_heartbeat
+    tool: mcu.read_heartbeat
+    description: "读取 MCU 心跳包确认在线状态"
+    timeout_ms: 2000
+    on_failure: escalate
+
+  - id: send_test_frame
+    tool: mcu.send_uart_frame
+    description: "发送标准 UART 测试帧 (0x55 0xAA 0x01 0x02)"
+    payload:
+      frame: [0x55, 0xAA, 0x01, 0x02]
+    timeout_ms: 1000
+
+  - id: read_response
+    tool: mcu.read_uart_response
+    description: "读取 MCU 返回帧并比对"
+    expected_length: 4
+    timeout_ms: 1000
+
+  - id: verify_gpio
+    tool: mcu.read_gpio
+    description: "读取 GPIO 状态辅助判断"
+    pins: ["PA0", "PA1", "LED_BUILTIN"]
+
+  - id: i2c_scan
+    tool: mcu.scan_i2c
+    description: "扫描 I2C 总线确认外设状态"
+    optional: true
+
+evidence_collection:
+  - step: check_heartbeat
+    record: heartbeat_status
+  - step: send_test_frame
+    record: sent_frame_log
+  - step: read_response
+    record: response_frame_log
+  - step: verify_gpio
+    record: gpio_snapshot
+
+regression:
+  after_change: "重新运行全部步骤"
+  minimum_pass_count: 1

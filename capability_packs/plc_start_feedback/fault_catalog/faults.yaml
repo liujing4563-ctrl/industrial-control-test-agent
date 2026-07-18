@@ -1,0 +1,84 @@
+# PLC 电机启动反馈 — 故障目录
+
+faults:
+  - fault_id: plc_interlock_blocked
+    name: "互锁条件阻塞"
+    severity: critical
+    symptoms:
+      - "read_interlock 返回 all_clear: false"
+      - "无法发送启动信号"
+    possible_causes:
+      - "急停按钮被按下"
+      - "安全门未关闭"
+      - "热保护继电器触发"
+      - "外部安全回路断开"
+    diagnostic_steps:
+      - "逐一检查 interlock 状态: estop / guard_door / thermal"
+      - "检查安全回路接线"
+      - "检查 PLC 输入模块指示灯"
+    recovery:
+      - "释放急停按钮"
+      - "关闭安全门"
+      - "等待热保护复位"
+      - "修复安全回路"
+
+  - fault_id: plc_start_no_feedback
+    name: "启动后无反馈信号"
+    severity: high
+    symptoms:
+      - "write_test_signal 成功但 wait_feedback 超时"
+      - "电机不运转"
+    possible_causes:
+      - "电机供电断开"
+      - "接触器故障不吸合"
+      - "反馈传感器故障"
+      - "PLC 输出模块故障"
+      - "电机本身损坏"
+    diagnostic_steps:
+      - "检查电机供电电压"
+      - "检查接触器线圈电压"
+      - "手动测试反馈传感器"
+      - "检查 PLC 输出指示灯"
+      - "用万用表测量反馈信号线路"
+    recovery:
+      - "恢复电机供电"
+      - "更换接触器"
+      - "更换反馈传感器"
+      - "修复 PLC 输出通道"
+
+  - fault_id: plc_signal_mapping_error
+    name: "信号地址映射错误"
+    severity: medium
+    symptoms:
+      - "读取信号值与预期不符"
+      - "写入信号后读取不一致"
+    possible_causes:
+      - "PLC 地址表与实际接线不匹配"
+      - "I/O 模块配置错误"
+      - "信号名称拼写错误"
+      - "地址偏移量计算错误"
+    diagnostic_steps:
+      - "对照 PLC 地址分配表逐一核对"
+      - "检查 I/O 模块型号和槽位"
+      - "用 PLC 编程软件在线监控信号"
+    recovery:
+      - "修正信号地址映射"
+      - "更新能力包配置"
+
+  - fault_id: plc_environment_reset_failure
+    name: "测试环境无法复位"
+    severity: low
+    symptoms:
+      - "reset_test_environment 失败"
+      - "残留输出信号"
+    possible_causes:
+      - "设备状态机处于异常状态"
+      - "输出模块锁定"
+      - "PLC 程序不允许远程复位"
+    diagnostic_steps:
+      - "检查 PLC 当前运行模式"
+      - "手动断开输出强制"
+      - "检查 PLC 程序中的复位逻辑"
+    recovery:
+      - "切换到 STOP 模式后重新切换到 RUN"
+      - "手动清除残留输出"

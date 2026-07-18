@@ -1,0 +1,28 @@
+# MCU UART 波特率不匹配示例
+
+scenario_id: mcu_uart_baudrate_mismatch
+name: "MCU UART 波特率不匹配"
+description: "通信双方波特率不一致导致帧解析失败"
+
+steps:
+  - tool: mcu.read_heartbeat
+    expected:
+      status: "timeout"
+      symptom: "no_response"
+
+  - tool: mcu.send_uart_frame
+    arguments:
+      frame: [0x55, 0xAA, 0x01, 0x02]
+      baudrate: 115200
+    expected:
+      sent: true
+
+  - tool: mcu.read_uart_response
+    expected:
+      received: true
+      parse_success: false
+      symptom: "garbled_data"
+
+expected_outcome: fail
+expected_fault: mcu_baudrate_mismatch
+recovery: "尝试 9600/19200/38400/57600 波特率逐一匹配"

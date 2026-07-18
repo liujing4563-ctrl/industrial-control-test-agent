@@ -23,18 +23,27 @@ _policy: PolicyValidator | None = None
 _runner: MockRunner | None = None
 _evidence_store: EvidenceStore | None = None
 
+# Configurable termination criteria
+_max_steps: int = 20
+_required_evidence_count: int = 3
+
 
 def set_runtime_context(
     agent: MockAgent,
     policy: PolicyValidator,
     runner: MockRunner,
     evidence_store: EvidenceStore,
+    max_steps: int = 20,
+    required_evidence_count: int = 3,
 ) -> None:
     global _agent, _policy, _runner, _evidence_store
+    global _max_steps, _required_evidence_count
     _agent = agent
     _policy = policy
     _runner = runner
     _evidence_store = evidence_store
+    _max_steps = max_steps
+    _required_evidence_count = required_evidence_count
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +53,7 @@ def set_runtime_context(
 def initialize_case(state: CaseGraphState) -> Dict[str, Any]:
     return {
         "stage": "planning",
-        "remaining_steps": state.get("remaining_steps", 20),
+        "remaining_steps": _max_steps,
         "evidence_ids": [],
         "hypothesis_ids": [],
         "proposed_action_id": None,
@@ -80,8 +89,8 @@ def validate_action(state: CaseGraphState) -> Dict[str, Any]:
         current_phase=state["stage"],
     )
 
-    steps = state.get("remaining_steps", 20)
-    result = _policy.validate(case, intent, steps_taken=20 - steps)  # type: ignore[union-attr]
+    steps = state.get("remaining_steps", _max_steps)
+    result = _policy.validate(case, intent, steps_taken=_max_steps - steps)  # type: ignore[union-attr]
 
     return {
         "policy_decision": result.decision,
@@ -113,24 +122,33 @@ def record_observation(state: CaseGraphState) -> Dict[str, Any]:
 
 
 def decide_next(state: CaseGraphState) -> Dict[str, Any]:
+    """Decide next phase based on evidence sufficiency, budget, and policy."""
     remaining = state.get("remaining_steps", 0)
     decision = state.get("policy_decision", "")
+    evidence_count = len(state.get("evidence_ids", []))
 
+    # Hard stop: policy rejection
     if decision == "rejected":
         return {
             "stage": "rejected",
-            "termination_reason": f"Policy rejected: action not allowed",
+            "termination_reason": "Policy rejected: action not allowed",
         }
+
+    # Hard stop: budget exhausted
     if remaining <= 0:
         return {
             "stage": "escalated",
-            "termination_reason": "Step budget exhausted",
+            "termination_reason": f"Step budget exhausted ({evidence_count} evidence collected)",
         }
-    if remaining <= 15:  # after a few steps, complete
+
+    # Success: sufficient evidence collected
+    if evidence_count >= _required_evidence_count:
         return {
             "stage": "completed",
-            "termination_reason": "Case completed successfully",
+            "termination_reason": f"Case completed — {evidence_count} evidence records collected (threshold={_required_evidence_count})",
         }
+
+    # Continue collecting evidence
     return {
         "stage": "planning",
     }

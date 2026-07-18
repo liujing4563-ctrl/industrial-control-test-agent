@@ -8,16 +8,38 @@ Extensible and Verifiable Multi-Agent Test Engineering Platform for Embedded Boa
 
 ```bash
 # 安装依赖
-pip install -e .
+pip install -e ".[dev]"
 
 # 编译检查
-PYTHONPATH=src python -m compileall src
+python -m compileall src
 
 # 运行测试
-PYTHONPATH=src python -m pytest -q tests/unit
+pytest -q
 ```
 
-> 当前状态：**8 passed** ✅  · 分支：`main`  · 阶段：V1 架构基线
+> 当前状态：**47 passed** ✅  · 分支：`main`  · 阶段：**M1 — Agent Runtime V0**
+
+---
+
+## 演示
+
+```bash
+python -m industrial_test_agent.agent_runtime.demo
+```
+
+预期输出：
+
+```
+case initialized
+action proposed
+policy allowed
+mock runner executed
+observation recorded
+evidence appended: ev-xxx
+case completed
+final state: stage=completed
+reason=Case completed — 3 evidence records collected (threshold=3)
+```
 
 ---
 
@@ -48,14 +70,39 @@ PYTHONPATH=src python -m pytest -q tests/unit
 
 ---
 
-## 当前阶段
+## 当前阶段 — M1: Agent Runtime V0
 
-本阶段建立顶层设计、系统架构基线、领域模型、Schema 和接口骨架。
-不实现真实 Agent、LangGraph、MCP 或设备驱动。
+已实现确定性闭环执行链路：
 
-## 目标
+```
+CaseState → Mock Agent → ActionIntent → Policy Validator
+→ Mock Runner → Observation → Evidence Store → CaseState 更新 → 结束
+```
 
-构建一个可扩展、可验证的工业测试平台基线，支持 MCU 和 PLC I/O 两个领域，并明确多 Agent、Skill、Policy、Runner、Evidence 的边界。
+### 已交付模块
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| Domain | `domain/` | CaseState, ActionIntent, Observation, Evidence, Hypothesis, Finding |
+| Agent | `agents/mock_agent.py` | 确定性 ActionIntent 生成器 (无 LLM) |
+| Policy | `policy/validator.py` | 4 条规则：白名单、参数校验、调用预算、写操作审批 |
+| Runner | `runner/mock_runner.py` | 3 个 PLC 工具：read_interlock, read_signal, wait_feedback |
+| Evidence | `evidence/in_memory_store.py` | 只追加内存存储，不暴露 update/delete |
+| Runtime | `agent_runtime/` | GraphRunner, CaseGraphState, 7 个节点, demo |
+
+### 能力包
+
+| 能力包 | 领域 | 工具数 | 故障场景 |
+|--------|------|--------|---------|
+| `capability_packs/mcu_uart/` | MCU | 5 (heartbeat, uart_frame, gpio, i2c…) | 4 (心跳/波特率/帧丢失/GPIO) |
+| `capability_packs/plc_start_feedback/` | PLC I/O | 5 (信号读写, 互锁, 反馈, 复位) | 4 (互锁/无反馈/映射/复位) |
+
+### 本阶段边界
+
+- ✅ 确定性 Runner + Policy + Evidence 闭环
+- ✅ 能力包骨架 (manifest + workflow + faults + examples)
+- ❌ 不接入真实 LLM、MCP、PLC、MCU 或数据库
+- ❌ 不实现 Web 页面和完整设备驱动
 
 ## 目录说明
 

@@ -7,9 +7,13 @@
     "observationId": {"type": "string"},
     "caseId": {"type": "string"},
     "source": {"type": "string"},
+    "sourceType": {"type": "string"},
+    "toolId": {"type": "string"},
     "timestamp": {"type": "string", "format": "date-time"},
+    "receivedAt": {"type": "string", "format": "date-time"},
     "payload": {"type": "object"},
-    "schemaId": {"type": "string"}
+    "schemaId": {"type": "string"},
+    "relatedActionIntentId": {"type": "string"}
   },
   "required": ["observationId", "caseId", "source", "timestamp", "payload", "schemaId"],
   "additionalProperties": false

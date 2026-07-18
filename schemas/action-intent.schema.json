@@ -6,12 +6,18 @@
   "properties": {
     "intentId": {"type": "string"},
     "caseId": {"type": "string"},
+    "agentId": {"type": "string"},
     "actionType": {"type": "string"},
     "actionDetails": {"type": "object"},
     "reason": {"type": "string"},
     "requestedBy": {"type": "string"},
-    "priority": {"type": "string"},
-    "createdAt": {"type": "string", "format": "date-time"}
+    "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+    "status": {"type": "string", "enum": ["draft", "submitted", "approved", "rejected", "executing", "completed"]},
+    "targetResource": {"type": "string"},
+    "relatedEvidenceIds": {"type": "array", "items": {"type": "string"}},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "approvedBy": {"type": "string"},
+    "approvedAt": {"type": "string", "format": "date-time"}
   },
   "required": ["intentId", "caseId", "actionType", "reason", "requestedBy", "createdAt"],
   "additionalProperties": false

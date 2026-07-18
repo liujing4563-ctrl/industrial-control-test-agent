@@ -1,0 +1,1 @@
+"""Diagnosis critic prompt templates."""

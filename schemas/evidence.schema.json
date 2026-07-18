@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/evidence.schema.json",
+  "title": "Evidence",
+  "type": "object",
+  "properties": {
+    "evidenceId": {"type": "string"},
+    "observationId": {"type": "string"},
+    "caseId": {"type": "string"},
+    "source": {"type": "string"},
+    "contentHash": {"type": "string"},
+    "metadata": {"type": "object"},
+    "createdAt": {"type": "string", "format": "date-time"}
+  },
+  "required": ["evidenceId", "observationId", "caseId", "source", "contentHash", "createdAt"],
+  "additionalProperties": false
+}

@@ -1,15 +1,85 @@
 # Domain Model
 
-## 核心概念
+## Project
+- 含义：测试项目或验证任务集合。
+- 关键字段：project_id、name、description、owner、created_at。
+- 生命周期：创建 → 规划 → 执行 → 验收。
+- 关系：包含 Requirement、TestCase、CaseState。
 
-- `CaseState`：案件当前事实、生命周期、证据引用、故障假设、审批与回归状态。
-- `ActionIntent`：Agent 生成的请求动作与原因说明。
-- `Observation`：Runner / MCP 返回的原始证据。
-- `SkillManifest`：Skill 的元数据与输入/输出定义。
-- `CapabilityManifest`：能力包的能力声明与调用契约。
+## Requirement
+- 含义：测试需求或验收标准。
+- 关键字段：requirement_id、description、priority、status。
+- 生命周期：定义 → 验证 → 关闭。
+- 谁能创建：测试工程师。
+- 谁能修改：系统负责人、验证工程师。
 
-## 设计原则
+## TestCase
+- 含义：具体测试用例。
+- 关键字段：test_case_id、description、expected_result、domain、status。
+- 关系：属于 Requirement，生成 Observation。
 
-- 领域模型必须统一、可序列化、可校验。
-- 各模块通过 Schema 交互，避免跨模块直接依赖具体实现。
-- CaseState 数据为单一事实源，服务于所有 Agent 和工作流。
+## TestRun
+- 含义：一次测试执行。
+- 关键字段：run_id、case_id、start_time、end_time、outcome。
+- 关系：关联 TestCase、Observation、Evidence。
+
+## CaseState
+- 含义：案件当前事实与生命周期。
+- 关键字段：case_id、current_phase、evidence_ids、hypotheses、approval_status、regression_status。
+- 谁能创建：Orchestrator。
+- 谁能读取：所有 Agent 与工作流。
+- 谁能修改：Orchestrator 与 Policy。
+
+## ActionIntent
+- 含义：Agent 提出的结构化执行请求。
+- 关键字段：intent_id、case_id、action_type、action_details、reason、requested_by、status。
+- 谁能创建：Agent。
+- 谁能修改：Policy 或审批模块。
+
+## Observation
+- 含义：Runner/MCP 返回的原始结果。
+- 关键字段：observation_id、case_id、source、payload、schema_id、timestamp。
+- 谁能创建：Runner/MCP。
+- 只能追加，不可修改。
+
+## Evidence
+- 含义：原始证据记录。
+- 关键字段：evidence_id、observation_id、case_id、source、content_hash、created_at。
+- 谁能创建：Evidence Store。
+- 只能追加。
+
+## Hypothesis
+- 含义：故障假设或诊断结论。
+- 关键字段：hypothesis_id、case_id、description、confidence、status。
+- 谁能创建：Agent。
+- 谁能修改：Diagnosis/Critic Agent 或 Orchestrator。
+
+## Finding
+- 含义：确认的故障或问题点。
+- 关键字段：finding_id、case_id、summary、severity、status。
+- 谁能创建：Agent 或诊断模块。
+- 谁能修改：验证工程师。
+
+## ChangeProposal
+- 含义：对设备或配置的修改提议。
+- 关键字段：proposal_id、case_id、action_intent_id、requested_by、reason、status。
+- 谁能创建：Agent。
+- 谁能修改：人工审批模块。
+
+## Approval
+- 含义：人工审批记录。
+- 关键字段：approval_id、proposal_id、case_id、approver、decision、comments。
+- 谁能创建：审核人员。
+
+## RegressionRun
+- 含义：回归测试执行记录。
+- 关键字段：regression_id、case_id、triggered_by、outcome、evidence_ids。
+- 谁能创建：Runner。
+
+## CapabilityPack
+- 含义：测试能力包元数据与规则。
+- 关键字段：capability_pack_id、name、version、domain、risk_level。
+
+## ToolCapability
+- 含义：MCP 工具能力声明。
+- 关键字段：tool_id、name、transport、input_schema、output_schema、permissions。

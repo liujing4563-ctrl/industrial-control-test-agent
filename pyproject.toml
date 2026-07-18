@@ -2,9 +2,18 @@
 name = "industrial-control-test-agent"
 version = "0.1.0"
 description = "工业控制测试代理框架基线"
-authors = ["liujing4563-ctrl <noreply@example.com>"]
+authors = [{name = "liujing4563-ctrl", email = "noreply@example.com"}]
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
 
 [build-system]
 requires = ["setuptools>=65.0", "wheel"]
@@ -15,3 +24,7 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

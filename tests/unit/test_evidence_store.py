@@ -47,6 +47,21 @@ class TestEvidenceStore:
         assert retrieved is not None
         assert retrieved.evidence_id == ev.evidence_id
 
+    def test_same_observation_is_appended_once(self, store):
+        observation = _obs()
+        first = store.append_from_observation(observation)
+        second = store.append_from_observation(observation)
+
+        assert second.evidence_id == first.evidence_id
+        assert len(store.list_by_case(observation.case_id)) == 1
+
+    def test_conflicting_replay_is_rejected(self, store):
+        evidence = store.append_from_observation(_obs())
+        conflicting = evidence.model_copy(update={"content_hash": "different"})
+
+        with pytest.raises(ValueError, match="conflicts"):
+            store.append_once(conflicting)
+
     def test_list_by_case(self, store):
         store.append_from_observation(_obs("case-A", "obs-A"))
         store.append_from_observation(_obs("case-A", "obs-B"))
@@ -95,3 +110,13 @@ class TestEvidenceStore:
 
     def test_get_nonexistent(self, store):
         assert store.get("nonexistent") is None
+
+    def test_snapshot_restore_is_idempotent(self, store):
+        evidence = store.append_from_observation(_obs())
+        restored = EvidenceStore()
+
+        restored.restore_snapshot([evidence])
+        restored.restore_snapshot([evidence])
+
+        assert restored.get(evidence.evidence_id) == evidence
+        assert len(restored.list_by_case(evidence.case_id)) == 1

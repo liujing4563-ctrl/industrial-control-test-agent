@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class Evidence(BaseModel):
     evidence_id: str
+    idempotency_key: Optional[str] = None
     observation_id: str
     case_id: str
     source: str

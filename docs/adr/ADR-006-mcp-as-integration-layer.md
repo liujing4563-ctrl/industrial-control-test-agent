@@ -1,22 +1,22 @@
-# ADR-006: MCP as Integration Layer
+# ADR-006：将 MCP 作为集成层
 
-## Status
-Accepted
+## 状态
+已接受
 
-## Context
+## 背景
 
 MCP 本质上是测试工具和设备能力的桥梁，不能承载业务决策。
 
-## Decision
+## 决策
 
 - MCP 仅暴露工具和资源接口。
-- 所有业务决策由 Policy、Runner 和 Orchestrator 负责。
+- 所有业务决策由策略、执行器和编排器负责。
 
-## Consequences
+## 影响
 
 - 业务与执行清晰分离。
 - MCP 鉴权、校验和限流成为边界责任。
 
-## Rejected Alternatives
+## 已拒绝的替代方案
 
 - 让 MCP 直接决定写操作：会混淆职责。

@@ -1,15 +1,15 @@
-# MCP Integration
+# MCP 集成
 
 ## 关键链路
 
-Agent
-→ ActionIntent
-→ Policy
-→ Runner
-→ MCP Gateway
-→ Test Service
-→ Protocol Driver
-→ Device
+智能体（Agent）
+→ 动作意图（ActionIntent）
+→ 策略校验（Policy）
+→ 执行器（Runner）
+→ MCP 网关
+→ 测试服务
+→ 协议驱动
+→ 设备
 
 ## MCP 不承担
 

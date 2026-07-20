@@ -74,6 +74,16 @@ class TestEvidenceStore:
         with pytest.raises(ValidationError):
             ev.evidence_id = "ev-002"
 
+    def test_retrieved_metadata_cannot_mutate_stored_evidence(self, store):
+        ev = store.append_from_observation(_obs())
+        retrieved = store.get(ev.evidence_id)
+        assert retrieved is not None
+        retrieved.metadata["tampered"] = True
+
+        stored_again = store.get(ev.evidence_id)
+        assert stored_again is not None
+        assert "tampered" not in stored_again.metadata
+
     def test_evidence_no_update_method(self, store):
         """Ensure EvidenceStore has no update/delete public API."""
         assert not hasattr(store, "update")

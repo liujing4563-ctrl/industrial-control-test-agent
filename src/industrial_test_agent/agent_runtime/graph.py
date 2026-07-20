@@ -1,11 +1,17 @@
-"""Minimal LangGraph case execution graph."""
+"""Minimal deterministic case execution graph."""
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import json
+from copy import deepcopy
+from typing import Any, Dict, Mapping, Optional, cast
 
 from industrial_test_agent.agent_runtime.state import CaseGraphState
 from industrial_test_agent.agent_runtime import nodes
+from industrial_test_agent.agent_runtime.routing import (
+    route_after_decision,
+    route_after_validation,
+)
 from industrial_test_agent.agents.mock_agent import MockAgent
 from industrial_test_agent.policy.validator import PolicyValidator
 from industrial_test_agent.runner.mock_runner import MockRunner
@@ -22,105 +28,184 @@ class GraphRunner:
         runner: Optional[MockRunner] = None,
         evidence_store: Optional[EvidenceStore] = None,
         max_steps: int = 20,
-        required_evidence_count: int = 3,
+        required_evidence_count: int = 1,
     ) -> None:
-        self.agent = agent or MockAgent()
-        self.policy = policy or PolicyValidator()
-        self.runner = runner or MockRunner()
-        self.evidence_store = evidence_store or EvidenceStore()
-        self.max_steps = max_steps
-        self.required_evidence_count = required_evidence_count
+        if max_steps < 0:
+            raise ValueError("max_steps must be non-negative")
+        if required_evidence_count < 1:
+            raise ValueError("required_evidence_count must be at least 1")
 
-        nodes.set_runtime_context(
-            self.agent,
-            self.policy,
-            self.runner,
-            self.evidence_store,
+        self.context = nodes.RuntimeContext(
+            agent=agent or MockAgent(),
+            policy=policy or PolicyValidator(),
+            runner=runner or MockRunner(),
+            evidence_store=evidence_store or EvidenceStore(),
             max_steps=max_steps,
             required_evidence_count=required_evidence_count,
         )
 
-        # Execution log
         self.log: list[str] = []
 
-    def run(self, case_id: str, goal: str) -> CaseGraphState:
-        """Run the case graph until a terminal state is reached."""
-        state: CaseGraphState = {
+    @property
+    def evidence_store(self) -> EvidenceStore:
+        return self.context.evidence_store
+
+    @property
+    def agent(self) -> MockAgent:
+        return self.context.agent
+
+    @property
+    def policy(self) -> PolicyValidator:
+        return self.context.policy
+
+    @property
+    def runner(self) -> MockRunner:
+        return self.context.runner
+
+    @property
+    def max_steps(self) -> int:
+        return self.context.max_steps
+
+    @property
+    def required_evidence_count(self) -> int:
+        return self.context.required_evidence_count
+
+    def run(
+        self,
+        case_id: str,
+        goal: str,
+        *,
+        max_node_executions: Optional[int] = None,
+    ) -> CaseGraphState:
+        """Start a case and run until completion or an optional pause point."""
+        self.log = []
+        state = self._new_state(case_id, goal)
+        return self._run_state(state, max_node_executions=max_node_executions)
+
+    def resume(
+        self,
+        checkpoint: str | Mapping[str, Any],
+        *,
+        max_node_executions: Optional[int] = None,
+    ) -> CaseGraphState:
+        """Resume a previously paused JSON or dictionary checkpoint."""
+        if isinstance(checkpoint, str):
+            payload = json.loads(checkpoint)
+        else:
+            payload = deepcopy(dict(checkpoint))
+        state = cast(CaseGraphState, payload)
+        self._validate_state(state)
+        return self._run_state(state, max_node_executions=max_node_executions)
+
+    @staticmethod
+    def checkpoint(state: CaseGraphState) -> str:
+        """Serialize graph state without runtime dependencies."""
+        return json.dumps(state, ensure_ascii=False, sort_keys=True)
+
+    def _new_state(self, case_id: str, goal: str) -> CaseGraphState:
+        return {
             "case_id": case_id,
             "goal": goal,
             "stage": "initialized",
             "proposed_action_id": None,
+            "proposed_action": None,
             "latest_observation_id": None,
+            "latest_observation": None,
             "evidence_ids": [],
             "hypothesis_ids": [],
-            "remaining_steps": self.max_steps,
+            "remaining_steps": self.context.max_steps,
+            "replan_count": 0,
+            "last_execution_success": None,
             "termination_reason": None,
             "policy_decision": None,
+            "policy_reason": None,
+            "next_node": "initialize_case",
         }
 
-        # Initialize
-        self._apply(state, nodes.initialize_case(state))
-        self._log("case initialized")
-
-        # Main loop
-        while state["stage"] not in ("completed", "escalated", "rejected"):
-            # Propose
-            state_updates = nodes.propose_action(state)
-            self._apply(state, state_updates)
-            self._log("action proposed")
-
-            # Validate
-            state_updates = nodes.validate_action(state)
-            self._apply(state, state_updates)
-
-            decision = state.get("policy_decision", "")
-            if decision == "allowed":
-                self._log("policy allowed")
-
-                # Execute
-                state_updates = nodes.execute_action(state)
-                self._apply(state, state_updates)
-                self._log("mock runner executed")
-
-                # Record
-                state_updates = nodes.record_observation(state)
-                self._apply(state, state_updates)
-                self._log("observation recorded")
-
-                if state.get("evidence_ids"):
-                    self._log(f"evidence appended: {state['evidence_ids'][-1]}")
-
-            elif decision == "approval_required":
-                self._log("policy: approval required (pausing)")
-                state["stage"] = "escalated"
-                state["termination_reason"] = "Human approval required"
+    def _run_state(
+        self,
+        state: CaseGraphState,
+        *,
+        max_node_executions: Optional[int],
+    ) -> CaseGraphState:
+        executed = 0
+        while state.get("next_node") is not None:
+            if max_node_executions is not None and executed >= max_node_executions:
                 break
-
-            else:  # rejected
-                self._log("policy rejected")
-                state["stage"] = "rejected"
-                state["termination_reason"] = "Policy rejected action"
-                break
-
-            # Decide next
-            state_updates = nodes.decide_next(state)
-            self._apply(state, state_updates)
-
-        # Finalize
-        nodes.finalize_case(state)
-        self._log("case " + state["stage"])
-
+            self._execute_node(state, state["next_node"])
+            executed += 1
         return state
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
+    def _execute_node(self, state: CaseGraphState, node_name: str) -> None:
+        if node_name == "initialize_case":
+            self._apply(state, nodes.initialize_case(state, self.context))
+            state["next_node"] = "propose_action"
+            self._log("case initialized")
+            return
+
+        if node_name == "propose_action":
+            self._apply(state, nodes.propose_action(state, self.context))
+            tool_name = state["proposed_action"]["action_details"]["tool_capability"]
+            state["next_node"] = "validate_action"
+            self._log(f"action proposed: {tool_name}")
+            return
+
+        if node_name == "validate_action":
+            self._apply(state, nodes.validate_action(state, self.context))
+            decision = state.get("policy_decision")
+            self._log(f"policy decision: {decision}")
+            if decision == "approval_required":
+                state["stage"] = "escalated"
+                state["termination_reason"] = state.get("policy_reason")
+            elif decision == "rejected":
+                state["stage"] = "rejected"
+                state["termination_reason"] = state.get("policy_reason")
+            state["next_node"] = route_after_validation(state)
+            return
+
+        if node_name == "execute_action":
+            self._apply(state, nodes.execute_action(state, self.context))
+            state["next_node"] = "record_observation"
+            if state.get("last_execution_success"):
+                self._log("mock runner executed")
+            else:
+                self._log("mock runner failed")
+            return
+
+        if node_name == "record_observation":
+            self._apply(state, nodes.record_observation(state, self.context))
+            state["next_node"] = "decide_next"
+            self._log("observation recorded")
+            self._log(f"evidence appended: {state['evidence_ids'][-1]}")
+            return
+
+        if node_name == "decide_next":
+            self._apply(state, nodes.decide_next(state, self.context))
+            if state["stage"] == "replanning":
+                self._log("runner failure routed to replan")
+            state["next_node"] = route_after_decision(state)
+            return
+
+        if node_name == "finalize_case":
+            self._apply(state, nodes.finalize_case(state, self.context))
+            state["next_node"] = None
+            self._log("case " + state["stage"])
+            return
+
+        raise ValueError(f"Unknown graph node: {node_name}")
 
     @staticmethod
     def _apply(state: CaseGraphState, updates: Dict[str, Any]) -> None:
         for key, value in updates.items():
             if key in state:
                 state[key] = value  # type: ignore[literal-required]
+
+    @staticmethod
+    def _validate_state(state: CaseGraphState) -> None:
+        required = {"case_id", "goal", "stage", "remaining_steps", "next_node"}
+        missing = required.difference(state)
+        if missing:
+            raise ValueError(f"Checkpoint missing fields: {sorted(missing)}")
 
     def _log(self, msg: str) -> None:
         self.log.append(msg)

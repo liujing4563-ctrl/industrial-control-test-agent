@@ -1,4 +1,4 @@
-# Capability Pack Specification
+# 能力包规范
 
 ## 目录结构
 
@@ -35,7 +35,7 @@ capability_pack/
 
 ## 生命周期
 
-- Draft
-- Validated
-- Approved
-- Deprecated
+- 草案（Draft）
+- 已验证（Validated）
+- 已批准（Approved）
+- 已弃用（Deprecated）

@@ -1,12 +1,12 @@
-# Team Work Packages
+# 团队工作包
 
 ## 负责人一：系统负责人
 
 职责：
 - 统筹顶层架构与设计
 - 定义领域模型与 CaseState
-- 设计 Agent Runtime 与根图
-- 定义 Policy、Runner、Evidence、MCP 边界
+- 设计智能体运行时与根图
+- 定义策略、执行器、证据、MCP 边界
 - 负责系统集成、Web/API 与比赛材料
 
 负责目录：
@@ -30,7 +30,7 @@
 
 职责：
 - MCU 测试领域说明与能力包
-- MCU Specialist 输入输出规范
+- MCU 专业智能体输入输出规范
 - MCU 模拟器与适配器接口定义
 - MCU 测试场景与故障分类
 
@@ -47,7 +47,7 @@
 
 职责：
 - PLC I/O 测试领域说明与能力包
-- PLC Specialist 输入输出规范
+- PLC 专业智能体输入输出规范
 - PLC 仿真与适配器接口定义
 - PLC 测试场景与故障分类
 

@@ -62,6 +62,24 @@ class TestPolicyValidator:
         )
         assert result.decision == "rejected"
 
+    def test_wrong_argument_type_rejected(self, case, validator):
+        result = validator.validate(
+            case,
+            _intent(case, "plc.read_interlock", args={"group": 123}),
+        )
+        assert result.decision == "rejected"
+
+    def test_unexpected_argument_rejected(self, case, validator):
+        result = validator.validate(
+            case,
+            _intent(
+                case,
+                "plc.read_interlock",
+                args={"group": "motor_start", "unsafe_extra": True},
+            ),
+        )
+        assert result.decision == "rejected"
+
     def test_write_operation_requires_approval(self, case, validator):
         """Rule 4: write tool → approval_required."""
         result = validator.validate(
@@ -77,6 +95,14 @@ class TestPolicyValidator:
         )
         assert result.decision == "rejected"
         assert "budget" in result.reason.lower()
+
+    def test_remaining_budget_exhausted_rejected(self, case, validator):
+        result = validator.validate(
+            case,
+            _intent(case, "plc.read_interlock"),
+            remaining_call_budget=0,
+        )
+        assert result.decision == "rejected"
 
     def test_read_signal_allowed(self, case, validator):
         result = validator.validate(

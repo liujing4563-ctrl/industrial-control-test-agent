@@ -1,23 +1,23 @@
-# ADR-008: Human Approval for Device Changes
+# ADR-008：设备变更的人工审批
 
-## Status
-Accepted
+## 状态
+已接受
 
-## Context
+## 背景
 
 真实设备写操作存在风险，必须提供人工审批节点。
 
-## Decision
+## 决策
 
 - 写操作生成 ChangeProposal。
-- 进入审批流程后才允许 Runner 执行。
+- 进入审批流程后才允许执行器执行。
 - 审批结果写回 CaseState。
 
-## Consequences
+## 影响
 
 - 降低误操作风险。
 - 增加审批延迟。
 
-## Rejected Alternatives
+## 已拒绝的替代方案
 
 - 直接自动执行所有写操作：风险过高。

@@ -17,7 +17,7 @@ python -m compileall src
 pytest -q
 ```
 
-> 当前状态：M1 智能体运行时 V0 已完成 · 56 项测试通过 · 分支：`feat/agent-runtime-v0-hardening`
+> 当前状态：M1 智能体运行时 V0 已完成 · 56 项测试通过
 
 ---
 

@@ -48,3 +48,7 @@ frontend/.vite/
 uploads/
 artifacts/
 reports/generated/
+.checkpoints/
+*.db
+*.sqlite
+*.sqlite3

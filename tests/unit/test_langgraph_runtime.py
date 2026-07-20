@@ -14,6 +14,23 @@ class TestLangGraphRuntime(unittest.TestCase):
         self.assertGreaterEqual(len(state["evidence_ids"]), 1)
         self.assertIn("case completed", runner.log[-1])
 
+    def test_demo_output_matches_m1_contract(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+
+        output = StringIO()
+        with redirect_stdout(output):
+            main()
+
+        text = output.getvalue()
+        self.assertIn("case initialized", text)
+        self.assertIn("action proposed: plc.read_interlock", text)
+        self.assertIn("policy decision: allowed", text)
+        self.assertIn("mock runner executed", text)
+        self.assertIn("observation recorded", text)
+        self.assertIn("evidence appended:", text)
+        self.assertIn("case completed", text)
+
 
 if __name__ == "__main__":
     unittest.main()

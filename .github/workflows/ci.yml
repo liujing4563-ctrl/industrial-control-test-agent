@@ -30,4 +30,4 @@ jobs:
         run: python -m compileall src
 
       - name: Run tests
-        run: pytest -q tests/unit
+        run: pytest -q

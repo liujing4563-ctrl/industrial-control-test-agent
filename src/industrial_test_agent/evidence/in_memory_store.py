@@ -21,7 +21,7 @@ class EvidenceStore:
     """
 
     def __init__(self) -> None:
-        self._store: Dict[str, Evidence] = {}
+        self._store: Dict[str, str] = {}
         self._by_case: Dict[str, List[str]] = {}
 
     # ------------------------------------------------------------------
@@ -52,17 +52,24 @@ class EvidenceStore:
             raise ValueError(
                 f"Evidence {evidence.evidence_id} already exists (append-only store)"
             )
-        self._store[evidence.evidence_id] = evidence
+        self._store[evidence.evidence_id] = evidence.model_dump_json()
         self._by_case.setdefault(evidence.case_id, []).append(evidence.evidence_id)
 
     def get(self, evidence_id: str) -> Optional[Evidence]:
         """Retrieve a single Evidence by ID."""
-        return self._store.get(evidence_id)
+        payload = self._store.get(evidence_id)
+        if payload is None:
+            return None
+        return Evidence.model_validate_json(payload)
 
     def list_by_case(self, case_id: str) -> List[Evidence]:
         """Return all Evidence records for a case, in insertion order."""
         ids = self._by_case.get(case_id, [])
-        return [self._store[eid] for eid in ids if eid in self._store]
+        return [
+            Evidence.model_validate_json(self._store[eid])
+            for eid in ids
+            if eid in self._store
+        ]
 
     # ------------------------------------------------------------------
     # Safety: no update / delete methods exposed

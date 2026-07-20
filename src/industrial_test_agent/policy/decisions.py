@@ -1,12 +1,15 @@
-from dataclasses import dataclass
-from typing import Dict, Any
+from dataclasses import dataclass, field
+from typing import Any, Dict, Literal
+
+
+PolicyDecision = Literal["allowed", "rejected", "approval_required"]
 
 
 @dataclass
 class PolicyResult:
-    decision: str
+    decision: PolicyDecision
     reason: str
-    details: Dict[str, Any] = None
+    details: Dict[str, Any] = field(default_factory=dict)
 
 
 def default_policy_result() -> PolicyResult:

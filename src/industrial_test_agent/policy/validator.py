@@ -2,18 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.case_state import CaseState
-
-
-@dataclass
-class PolicyResult:
-    decision: str  # allowed | rejected | approval_required
-    reason: str
-    details: Dict[str, Any] = field(default_factory=dict)
+from industrial_test_agent.policy.decisions import PolicyResult
 
 
 # ---------------------------------------------------------------------------
@@ -35,6 +28,7 @@ class ToolRegistry:
                     "group": {"type": "string"},
                 },
                 "required": ["group"],
+                "additionalProperties": False,
             },
         },
         "plc.read_signal": {
@@ -48,6 +42,7 @@ class ToolRegistry:
                     "signal_name": {"type": "string"},
                 },
                 "required": ["signal_name"],
+                "additionalProperties": False,
             },
         },
         "plc.wait_feedback": {
@@ -62,6 +57,7 @@ class ToolRegistry:
                     "timeout_ms": {"type": "integer"},
                 },
                 "required": ["feedback_name"],
+                "additionalProperties": False,
             },
         },
         "plc.write_test_signal": {
@@ -76,6 +72,7 @@ class ToolRegistry:
                     "value": {"type": "boolean"},
                 },
                 "required": ["signal_name", "value"],
+                "additionalProperties": False,
             },
         },
     }
@@ -98,11 +95,22 @@ class PolicyValidator:
 
     MAX_STEPS = 20
 
-    def __init__(self, tool_registry: Optional[ToolRegistry] = None) -> None:
+    def __init__(
+        self,
+        tool_registry: Optional[ToolRegistry] = None,
+        allowed_risk_levels: Optional[set[str]] = None,
+    ) -> None:
         self.tool_registry = tool_registry or ToolRegistry()
+        self.allowed_risk_levels = (
+            {"low"} if allowed_risk_levels is None else allowed_risk_levels
+        )
 
     def validate(
-        self, case_state: CaseState, intent: ActionIntent, steps_taken: int = 0
+        self,
+        case_state: CaseState,
+        intent: ActionIntent,
+        steps_taken: int = 0,
+        remaining_call_budget: Optional[int] = None,
     ) -> PolicyResult:
         # Rule 1: Tool whitelist
         tool_name = intent.action_details.get("tool_capability", "")
@@ -123,33 +131,78 @@ class PolicyValidator:
                 details={"tool": tool_name},
             )
 
-        # Rule 3: Call budget
-        if steps_taken >= self.MAX_STEPS:
+        # Rule 3: Risk level
+        risk_level = tool_info.get("risk_level", "unknown")
+        requires_approval = (
+            tool_info.get("write_operation", False)
+            or risk_level not in self.allowed_risk_levels
+        )
+
+        # Rule 4: Remaining call budget
+        budget_exhausted = (
+            remaining_call_budget is not None and remaining_call_budget <= 0
+        ) or (
+            remaining_call_budget is None and steps_taken >= self.MAX_STEPS
+        )
+        if budget_exhausted:
             return PolicyResult(
                 decision="rejected",
-                reason=f"Step budget exhausted ({steps_taken}/{self.MAX_STEPS})",
+                reason="Call budget exhausted",
+                details={
+                    "remaining_call_budget": remaining_call_budget,
+                    "steps_taken": steps_taken,
+                },
             )
 
-        # Rule 4: Risk level → write operations require approval
-        if tool_info.get("write_operation", False):
+        if requires_approval:
             return PolicyResult(
                 decision="approval_required",
-                reason=f"Tool '{tool_name}' is a write operation – human approval required",
-                details={"tool": tool_name, "risk_level": tool_info.get("risk_level")},
+                reason=f"Tool '{tool_name}' requires human approval",
+                details={"tool": tool_name, "risk_level": risk_level},
             )
 
         return PolicyResult(
             decision="allowed",
-            reason=f"Tool '{tool_name}' allowed (risk={tool_info.get('risk_level')})",
+            reason=f"Tool '{tool_name}' allowed (risk={risk_level})",
         )
 
     @staticmethod
     def _validate_params(tool_info: Dict[str, Any], arguments: Dict[str, Any]) -> bool:
         schema = tool_info.get("input_schema")
         if not schema:
-            return True  # no schema → pass
+            return True
+        if not isinstance(arguments, dict):
+            return False
+
         required = schema.get("required", [])
-        for key in required:
-            if key not in arguments:
+        if any(key not in arguments for key in required):
+            return False
+
+        properties = schema.get("properties", {})
+        if schema.get("additionalProperties") is False:
+            if any(key not in properties for key in arguments):
+                return False
+
+        for key, value in arguments.items():
+            expected_type = properties.get(key, {}).get("type")
+            if expected_type and not PolicyValidator._matches_json_type(
+                value, expected_type
+            ):
                 return False
         return True
+
+    @staticmethod
+    def _matches_json_type(value: Any, expected_type: str) -> bool:
+        if expected_type == "string":
+            return isinstance(value, str)
+        if expected_type == "integer":
+            return isinstance(value, int) and not isinstance(value, bool)
+        if expected_type == "number":
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        if expected_type == "boolean":
+            return isinstance(value, bool)
+        if expected_type == "object":
+            return isinstance(value, dict)
+        if expected_type == "array":
+            return isinstance(value, list)
+        return False

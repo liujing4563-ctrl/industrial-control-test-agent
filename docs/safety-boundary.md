@@ -1,8 +1,8 @@
-# Safety Boundary
+# 安全边界
 
 ## 注册阶段
 
-- Skill 审查
+- 技能审查
 - MCP 审查
 - 权限声明
 - 来源记录

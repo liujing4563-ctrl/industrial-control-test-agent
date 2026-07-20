@@ -1,24 +1,24 @@
-# ADR-004: Append-only Evidence
+# ADR-004：只追加证据
 
-## Status
-Accepted
+## 状态
+已接受
 
-## Context
+## 背景
 
-Evidence 必须作为不可篡改的事实源，以避免 Agent 或后续节点覆盖原始工具返回。
+证据必须作为不可篡改的事实源，以避免智能体或后续节点覆盖原始工具返回。
 
-## Decision
+## 决策
 
 - 原始 Observation 和 Evidence 只追加。
 - 任何派生结论与推理结果作为独立实体保存。
-- Evidence Store 提供只追加接口。
+- 证据存储提供只追加接口。
 
-## Consequences
+## 影响
 
 - 提高审计性。
 - 便于回溯和差异分析。
 - 需要额外存储空间。
 
-## Rejected Alternatives
+## 已拒绝的替代方案
 
 - 允许更新原始证据：被拒绝，因为破坏了事实链。

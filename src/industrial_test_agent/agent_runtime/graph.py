@@ -4,8 +4,13 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from typing import Any, Dict, Mapping, Optional, cast
+from typing import Any, Dict, Mapping, Optional
 
+from industrial_test_agent.agent_runtime.checkpoint import (
+    CheckpointEnvelope,
+    CheckpointGraphState,
+    CheckpointMetadata,
+)
 from industrial_test_agent.agent_runtime.state import CaseGraphState
 from industrial_test_agent.agent_runtime import nodes
 from industrial_test_agent.agent_runtime.routing import (
@@ -88,19 +93,35 @@ class GraphRunner:
         *,
         max_node_executions: Optional[int] = None,
     ) -> CaseGraphState:
-        """Resume a previously paused JSON or dictionary checkpoint."""
+        """Resume a validated JSON or dictionary checkpoint bundle."""
         if isinstance(checkpoint, str):
             payload = json.loads(checkpoint)
         else:
             payload = deepcopy(dict(checkpoint))
-        state = cast(CaseGraphState, payload)
-        self._validate_state(state)
+
+        envelope = self._load_checkpoint(payload)
+        self.evidence_store.restore_snapshot(envelope.evidence_snapshot)
+        state = envelope.graph_state.to_runtime_state()
         return self._run_state(state, max_node_executions=max_node_executions)
 
-    @staticmethod
-    def checkpoint(state: CaseGraphState) -> str:
-        """Serialize graph state without runtime dependencies."""
-        return json.dumps(state, ensure_ascii=False, sort_keys=True)
+    def checkpoint(self, state: CaseGraphState) -> str:
+        """Serialize graph state and its Evidence records as a versioned bundle."""
+        graph_state = CheckpointGraphState.model_validate(state)
+        evidence_snapshot = []
+        for evidence_id in graph_state.evidence_ids:
+            evidence = self.evidence_store.get(evidence_id)
+            if evidence is None:
+                raise ValueError(
+                    f"Checkpoint references missing Evidence: {evidence_id}"
+                )
+            evidence_snapshot.append(evidence)
+
+        envelope = CheckpointEnvelope(
+            graph_state=graph_state,
+            evidence_snapshot=evidence_snapshot,
+            checkpoint_metadata=CheckpointMetadata(case_id=graph_state.case_id),
+        )
+        return envelope.model_dump_json()
 
     def _new_state(self, case_id: str, goal: str) -> CaseGraphState:
         return {
@@ -200,12 +221,27 @@ class GraphRunner:
             if key in state:
                 state[key] = value  # type: ignore[literal-required]
 
-    @staticmethod
-    def _validate_state(state: CaseGraphState) -> None:
-        required = {"case_id", "goal", "stage", "remaining_steps", "next_node"}
-        missing = required.difference(state)
-        if missing:
-            raise ValueError(f"Checkpoint missing fields: {sorted(missing)}")
+    def _load_checkpoint(self, payload: Mapping[str, Any]) -> CheckpointEnvelope:
+        if "graph_state" in payload:
+            return CheckpointEnvelope.model_validate(payload)
+
+        # Backward compatibility for M1 raw-state checkpoints. Existing
+        # Evidence references must already be resolvable by the current store.
+        graph_state = CheckpointGraphState.model_validate(payload)
+        evidence_snapshot = []
+        for evidence_id in graph_state.evidence_ids:
+            evidence = self.evidence_store.get(evidence_id)
+            if evidence is None:
+                raise ValueError(
+                    "Legacy checkpoint references Evidence missing from the store: "
+                    f"{evidence_id}"
+                )
+            evidence_snapshot.append(evidence)
+        return CheckpointEnvelope(
+            graph_state=graph_state,
+            evidence_snapshot=evidence_snapshot,
+            checkpoint_metadata=CheckpointMetadata(case_id=graph_state.case_id),
+        )
 
     def _log(self, msg: str) -> None:
         self.log.append(msg)

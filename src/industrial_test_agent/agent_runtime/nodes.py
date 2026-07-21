@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import uuid
 from typing import Any, Dict
 
 from industrial_test_agent.agent_runtime.state import CaseGraphState
@@ -62,6 +63,8 @@ def propose_action(
         "latest_observation_id": None,
         "latest_observation": None,
         "last_execution_success": None,
+        "policy_decision": None,
+        "policy_reason": None,
         "stage": "planning",
     }
 
@@ -98,7 +101,28 @@ def execute_action(
 ) -> Dict[str, Any]:
     intent = _get_current_intent(state)
 
-    observation = context.runner.execute(intent)
+    try:
+        observation = context.runner.execute(intent)
+    except Exception as exc:
+        error_code = (
+            "runner_timeout" if isinstance(exc, TimeoutError) else "runner_exception"
+        )
+        observation = Observation(
+            observation_id=f"obs-{uuid.uuid4().hex[:8]}",
+            case_id=intent.case_id,
+            source="agent_runtime",
+            source_type="runtime",
+            payload={
+                "action_id": intent.intent_id,
+                "success": False,
+                "status": "failed",
+                "failure_kind": "execution",
+                "error_code": error_code,
+                "error_message": str(exc),
+            },
+            schema_id="observation",
+            related_action_intent_id=intent.intent_id,
+        )
 
     return {
         "latest_observation_id": observation.observation_id,
@@ -114,7 +138,9 @@ def record_observation(
 ) -> Dict[str, Any]:
     observation = _get_latest_observation(state)
     evidence = context.evidence_store.append_from_observation(observation)
-    evidence_ids = [*state.get("evidence_ids", []), evidence.evidence_id]
+    evidence_ids = list(state.get("evidence_ids", []))
+    if evidence.evidence_id not in evidence_ids:
+        evidence_ids.append(evidence.evidence_id)
 
     return {
         "evidence_ids": evidence_ids,

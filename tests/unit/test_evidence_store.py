@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from industrial_test_agent.domain.observation import Observation
 from industrial_test_agent.domain.evidence import Evidence
+from industrial_test_agent.evidence.exceptions import EvidenceConflictError
 from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 
 
@@ -59,8 +60,10 @@ class TestEvidenceStore:
         evidence = store.append_from_observation(_obs())
         conflicting = evidence.model_copy(update={"content_hash": "different"})
 
-        with pytest.raises(ValueError, match="conflicts"):
+        with pytest.raises(EvidenceConflictError, match="conflicts"):
             store.append_once(conflicting)
+        assert store.get(evidence.evidence_id) == evidence
+        assert len(store.list_by_case(evidence.case_id)) == 1
 
     def test_list_by_case(self, store):
         store.append_from_observation(_obs("case-A", "obs-A"))
@@ -98,6 +101,28 @@ class TestEvidenceStore:
         stored_again = store.get(ev.evidence_id)
         assert stored_again is not None
         assert "tampered" not in stored_again.metadata
+
+    def test_nested_metadata_is_isolated_from_retrieved_mutation(
+        self, store
+    ) -> None:
+        observation = _obs()
+        observation.payload["nested"] = {"items": [{"value": "original"}]}
+        evidence = store.append_from_observation(observation)
+
+        retrieved = store.get(evidence.evidence_id)
+        assert retrieved is not None
+        retrieved.metadata["observation"]["payload"]["nested"]["items"][0][
+            "value"
+        ] = "tampered"
+
+        stored_again = store.get(evidence.evidence_id)
+        assert stored_again is not None
+        assert (
+            stored_again.metadata["observation"]["payload"]["nested"]["items"][
+                0
+            ]["value"]
+            == "original"
+        )
 
     def test_evidence_no_update_method(self, store):
         """Ensure EvidenceStore has no update/delete public API."""

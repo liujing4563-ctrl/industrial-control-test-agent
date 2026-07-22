@@ -124,6 +124,6 @@ def test_runner_exception_becomes_observation_and_enters_replan():
     records = runner.evidence_store.list_by_case("case-timeout")
     assert len(records) == 2
     failed_observation = records[0].metadata["observation"]
-    assert failed_observation["payload"]["failure_kind"] == "execution"
+    assert failed_observation["payload"]["failure_kind"] == "execution_failed"
     assert failed_observation["payload"]["error_code"] == "runner_timeout"
     assert failed_observation["payload"]["error_message"] == "injected timeout"

@@ -8,6 +8,7 @@ from typing import Dict, Iterable, List, Optional
 
 from industrial_test_agent.domain.evidence import Evidence
 from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.evidence.exceptions import EvidenceConflictError
 
 
 class EvidenceStore:
@@ -60,7 +61,7 @@ class EvidenceStore:
             evidence.idempotency_key is not None
             and evidence.idempotency_key in self._by_idempotency_key
         ):
-            raise ValueError(
+            raise EvidenceConflictError(
                 f"Evidence idempotency key {evidence.idempotency_key} already exists"
             )
 
@@ -82,7 +83,7 @@ class EvidenceStore:
             if existing is None:
                 raise RuntimeError(f"Evidence index is corrupted for {existing_id}")
             if not self._same_content(existing, evidence):
-                raise ValueError(
+                raise EvidenceConflictError(
                     "Evidence replay conflicts with the existing append-only record"
                 )
             return existing
@@ -106,7 +107,7 @@ class EvidenceStore:
 
             existing = self.get(existing_id)
             if existing is None or not self._same_content(existing, evidence):
-                raise ValueError(
+                raise EvidenceConflictError(
                     "Checkpoint Evidence conflicts with the existing append-only store"
                 )
 

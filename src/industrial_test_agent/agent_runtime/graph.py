@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any, Dict, Mapping, Optional
 
 from industrial_test_agent.agent_runtime.checkpoint import (
+    CHECKPOINT_VERSION,
     CheckpointEnvelope,
     CheckpointGraphState,
     CheckpointMetadata,
@@ -95,12 +96,24 @@ class GraphRunner:
     ) -> CaseGraphState:
         """Resume a validated JSON or dictionary checkpoint bundle."""
         if isinstance(checkpoint, str):
-            payload = json.loads(checkpoint)
+            try:
+                payload = json.loads(checkpoint)
+            except json.JSONDecodeError as exc:
+                raise ValueError("Checkpoint JSON is invalid") from exc
         else:
             payload = deepcopy(dict(checkpoint))
 
         envelope = self._load_checkpoint(payload)
         self.evidence_store.restore_snapshot(envelope.evidence_snapshot)
+        unresolved_ids = [
+            evidence_id
+            for evidence_id in envelope.graph_state.evidence_ids
+            if self.evidence_store.get(evidence_id) is None
+        ]
+        if unresolved_ids:
+            raise RuntimeError(
+                f"Checkpoint restore left unresolved Evidence IDs: {unresolved_ids}"
+            )
         state = envelope.graph_state.to_runtime_state()
         return self._run_state(state, max_node_executions=max_node_executions)
 
@@ -117,9 +130,10 @@ class GraphRunner:
             evidence_snapshot.append(evidence)
 
         envelope = CheckpointEnvelope(
+            checkpoint_version=CHECKPOINT_VERSION,
             graph_state=graph_state,
             evidence_snapshot=evidence_snapshot,
-            checkpoint_metadata=CheckpointMetadata(case_id=graph_state.case_id),
+            metadata=CheckpointMetadata(case_id=graph_state.case_id),
         )
         return envelope.model_dump_json()
 
@@ -203,7 +217,12 @@ class GraphRunner:
         if node_name == "decide_next":
             self._apply(state, nodes.decide_next(state, self.context))
             if state["stage"] == "replanning":
-                self._log("runner failure routed to replan")
+                observation = state.get("latest_observation") or {}
+                payload = observation.get("payload", {})
+                if payload.get("failure_kind") == "test_failed":
+                    self._log("test failure routed to replan")
+                else:
+                    self._log("runner failure routed to replan")
             state["next_node"] = route_after_decision(state)
             return
 
@@ -223,7 +242,11 @@ class GraphRunner:
 
     def _load_checkpoint(self, payload: Mapping[str, Any]) -> CheckpointEnvelope:
         if "graph_state" in payload:
-            return CheckpointEnvelope.model_validate(payload)
+            normalized = self._normalize_envelope(payload)
+            version = normalized.get("checkpoint_version")
+            if version != CHECKPOINT_VERSION:
+                raise ValueError(f"Unsupported checkpoint version: {version}")
+            return CheckpointEnvelope.model_validate(normalized)
 
         # Backward compatibility for M1 raw-state checkpoints. Existing
         # Evidence references must already be resolvable by the current store.
@@ -238,10 +261,42 @@ class GraphRunner:
                 )
             evidence_snapshot.append(evidence)
         return CheckpointEnvelope(
+            checkpoint_version=CHECKPOINT_VERSION,
             graph_state=graph_state,
             evidence_snapshot=evidence_snapshot,
-            checkpoint_metadata=CheckpointMetadata(case_id=graph_state.case_id),
+            metadata=CheckpointMetadata(case_id=graph_state.case_id),
         )
+
+    @staticmethod
+    def _normalize_envelope(payload: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Migrate the short-lived M1 Envelope format without weakening validation."""
+        if "checkpoint_metadata" not in payload:
+            return payload
+        if "checkpoint_version" in payload or "metadata" in payload:
+            raise ValueError("Checkpoint mixes current and legacy Envelope formats")
+
+        legacy_metadata = payload.get("checkpoint_metadata")
+        if not isinstance(legacy_metadata, Mapping):
+            raise ValueError("Legacy checkpoint metadata is invalid")
+        unexpected_fields = set(legacy_metadata).difference(
+            {"format_version", "case_id"}
+        )
+        if unexpected_fields:
+            raise ValueError(
+                "Legacy checkpoint metadata has unknown fields: "
+                f"{sorted(unexpected_fields)}"
+            )
+        if legacy_metadata.get("format_version") != 1:
+            raise ValueError(
+                "Unsupported legacy checkpoint version: "
+                f"{legacy_metadata.get('format_version')}"
+            )
+
+        normalized = deepcopy(dict(payload))
+        normalized.pop("checkpoint_metadata")
+        normalized["checkpoint_version"] = CHECKPOINT_VERSION
+        normalized["metadata"] = {"case_id": legacy_metadata.get("case_id")}
+        return normalized
 
     def _log(self, msg: str) -> None:
         self.log.append(msg)

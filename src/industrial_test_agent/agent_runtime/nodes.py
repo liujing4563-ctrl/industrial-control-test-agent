@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 import uuid
 from typing import Any, Dict
 
@@ -13,6 +14,15 @@ from industrial_test_agent.runner.mock_runner import MockRunner
 from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.observation import Observation
+
+
+_SENSITIVE_VALUE = re.compile(
+    r"(?i)\b(password|passwd|secret|token|api[_-]?key|authorization)\b"
+    r"(\s*[:=]\s*)([^\n,;]+)"
+)
+_LOCAL_PATH = re.compile(
+    r"(?:(?:/Users|/home)/[^\s,;]+|[A-Za-z]:\\Users\\[^\s,;]+)"
+)
 
 
 @dataclass(frozen=True)
@@ -116,13 +126,15 @@ def execute_action(
                 "action_id": intent.intent_id,
                 "success": False,
                 "status": "failed",
-                "failure_kind": "execution",
+                "failure_kind": "execution_failed",
                 "error_code": error_code,
-                "error_message": str(exc),
+                "error_message": _sanitize_error_message(exc),
             },
             schema_id="observation",
             related_action_intent_id=intent.intent_id,
         )
+    else:
+        observation = _normalize_failure_kind(observation)
 
     return {
         "latest_observation_id": observation.observation_id,
@@ -157,11 +169,20 @@ def decide_next(
     execution_succeeded = state.get("last_execution_success") is True
 
     if not execution_succeeded:
+        observation = _get_latest_observation(state)
+        failure_kind = observation.payload.get(
+            "failure_kind", "execution_failed"
+        )
         if remaining <= 0:
+            failure_label = (
+                "test failure"
+                if failure_kind == "test_failed"
+                else "runner failure"
+            )
             return {
                 "stage": "escalated",
                 "termination_reason": (
-                    f"Call budget exhausted after runner failure "
+                    f"Call budget exhausted after {failure_label} "
                     f"({evidence_count} evidence collected)"
                 ),
             }
@@ -214,3 +235,33 @@ def _get_latest_observation(state: CaseGraphState) -> Observation:
     if payload is None:
         raise RuntimeError("No Observation is available in graph state")
     return Observation.model_validate(payload)
+
+
+def _normalize_failure_kind(observation: Observation) -> Observation:
+    """Classify unsuccessful Runner responses without changing successful data."""
+    payload = dict(observation.payload)
+    if bool(payload.get("success", False)):
+        return observation
+
+    failure_kind = payload.get("failure_kind")
+    if failure_kind not in {"execution_failed", "test_failed"}:
+        failure_kind = (
+            "test_failed"
+            if payload.get("status") == "completed"
+            else "execution_failed"
+        )
+    payload["failure_kind"] = failure_kind
+    if failure_kind == "execution_failed":
+        payload["status"] = "failed"
+    return observation.model_copy(update={"payload": payload}, deep=True)
+
+
+def _sanitize_error_message(exc: Exception) -> str:
+    """Retain actionable context while redacting common credential assignments."""
+    message = str(exc).strip() or exc.__class__.__name__
+    redacted = _SENSITIVE_VALUE.sub(
+        lambda match: f"{match.group(1)}{match.group(2)}[REDACTED]",
+        message,
+    )
+    redacted = _LOCAL_PATH.sub("[LOCAL_PATH]", redacted)
+    return redacted[:500]

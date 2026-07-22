@@ -34,6 +34,7 @@ NodeName = Literal[
     "finalize_case",
 ]
 PolicyDecision = Literal["allowed", "rejected", "approval_required"]
+CHECKPOINT_VERSION = "1.0"
 
 
 class CheckpointGraphState(BaseModel):
@@ -71,17 +72,16 @@ class CheckpointGraphState(BaseModel):
             "escalated": {"finalize_case", None},
             "rejected": {"finalize_case", None},
         }
-        if self.next_node not in allowed_nodes[self.stage]:
-            raise ValueError(
-                f"Invalid stage/next_node combination: "
-                f"{self.stage}/{self.next_node}"
-            )
-
         terminal_stages = {"completed", "escalated", "rejected"}
         if self.stage in terminal_stages and not self.termination_reason:
             raise ValueError("Terminal checkpoint requires termination_reason")
         if self.stage not in terminal_stages and self.next_node is None:
             raise ValueError("Non-terminal checkpoint requires next_node")
+        if self.next_node not in allowed_nodes[self.stage]:
+            raise ValueError(
+                f"Invalid stage/next_node combination: "
+                f"{self.stage}/{self.next_node}"
+            )
 
         if (self.proposed_action_id is None) != (self.proposed_action is None):
             raise ValueError("ActionIntent ID and payload must appear together")
@@ -91,6 +91,8 @@ class CheckpointGraphState(BaseModel):
                 raise ValueError("ActionIntent ID does not match its payload")
             if intent.case_id != self.case_id:
                 raise ValueError("ActionIntent case_id does not match checkpoint")
+        if self.stage == "initialized" and self.proposed_action is not None:
+            raise ValueError("Initialized checkpoint cannot contain an ActionIntent")
 
         if (self.latest_observation_id is None) != (
             self.latest_observation is None
@@ -123,12 +125,25 @@ class CheckpointGraphState(BaseModel):
             raise ValueError(
                 "Execution result does not match the Observation payload"
             )
+        if observation is not None and self.proposed_action is None:
+            raise ValueError("Observation requires its ActionIntent in the checkpoint")
+        if observation is not None and self.policy_decision != "allowed":
+            raise ValueError("Observation requires an allowed policy decision")
 
-        nodes_requiring_action = {"validate_action", "execute_action"}
+        nodes_requiring_action = {
+            "validate_action",
+            "execute_action",
+            "record_observation",
+            "decide_next",
+        }
         if self.next_node in nodes_requiring_action and self.proposed_action is None:
             raise ValueError(f"{self.next_node} requires an ActionIntent")
         if self.next_node == "execute_action" and self.policy_decision != "allowed":
             raise ValueError("execute_action requires an allowed policy decision")
+        if self.next_node == "execute_action" and observation is not None:
+            raise ValueError(
+                "Checkpoint would repeat an ActionIntent that already has an Observation"
+            )
         if (
             self.next_node in {"record_observation", "decide_next"}
             and self.latest_observation is None
@@ -146,7 +161,6 @@ class CheckpointGraphState(BaseModel):
 
 
 class CheckpointMetadata(BaseModel):
-    format_version: Literal[1] = 1
     case_id: str = Field(min_length=1)
 
     model_config = ConfigDict(extra="forbid")
@@ -155,16 +169,17 @@ class CheckpointMetadata(BaseModel):
 class CheckpointEnvelope(BaseModel):
     """Self-contained state and Evidence snapshot used for recovery."""
 
+    checkpoint_version: Literal["1.0"]
     graph_state: CheckpointGraphState
     evidence_snapshot: list[Evidence] = Field(default_factory=list)
-    checkpoint_metadata: CheckpointMetadata
+    metadata: CheckpointMetadata
 
     model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")
     def validate_bundle_consistency(self) -> Self:
         state = self.graph_state
-        if self.checkpoint_metadata.case_id != state.case_id:
+        if self.metadata.case_id != state.case_id:
             raise ValueError("Checkpoint metadata case_id does not match state")
 
         snapshot_ids = [evidence.evidence_id for evidence in self.evidence_snapshot]

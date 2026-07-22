@@ -17,7 +17,7 @@ python -m compileall src
 pytest -q
 ```
 
-> 当前状态：M1 智能体运行时 V0 已完成 · 56 项测试通过
+> 当前状态：M1 智能体运行时 V0 与恢复可靠性强化已完成 · 97 项测试通过 · Python 3.11/3.12 CI 通过
 
 ---
 
@@ -70,7 +70,7 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 
 ---
 
-## M1 智能体运行时 V0
+## M1 智能体运行时 V0（已完成）
 
 当前版本已经完成平台最小可执行闭环：
 
@@ -96,8 +96,15 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 - Evidence 只追加存储；
 - Evidence ID 防重复；
 - 读取副本隔离，外部修改不会污染存储记录；
-- JSON 检查点；
-- 图状态恢复；
+- Evidence 幂等写入与冲突检测；
+- 带版本、图状态和 Evidence 快照的 Checkpoint Envelope；
+- 检查点版本、字段、状态与节点组合完整校验；
+- 恢复后 Evidence 引用完整性校验；
+- 检查点重复恢复不新增 Evidence；
+- 已产生 Observation 的动作不会在恢复时重复执行；
+- Runner 异常统一转换为失败 Observation；
+- `execution_failed` 与 `test_failed` 分类及重规划；
+- 异常输出中的常见凭据和本机路径脱敏；
 - 完整 pytest CI。
 
 当前未接入：
@@ -107,6 +114,12 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 - PLC 或 MCU 真实硬件；
 - Web 前端；
 - 多智能体协作。
+
+### 当前恢复边界
+
+当前 Runtime 可以防止检查点重放造成的重复 Mock Runner 调用和重复 Evidence。
+
+真实外部设备仍存在一个已知窗口：物理动作可能已经完成，但进程在 Observation 持久化前崩溃。未来真实设备 Adapter 和 Runner 必须使用外部幂等键、执行回执或持久化事务日志解决这一问题。
 
 ## 职责边界
 
@@ -171,28 +184,35 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 
 在对应领域负责人完成审核前，它们不代表正式工业测试规范，也不应作为真实设备自动测试依据。
 
-## 下一阶段
+## 近期工程顺序
 
-下一阶段为 M2：PLC 模拟器与单领域诊断闭环。
+M1 完成后不直接进入 PLC 或 MCU 业务实现。当前固定顺序为：
 
-平台负责人负责：
+```text
+Ruff 基线清理
+→ 统一可执行契约
+→ 领域接入公共接口
+→ 通用评测框架 V0
+→ PLC 与 MCU 领域实现
+```
 
-- 模拟器公共接口；
-- 运行时接入；
-- 假设（Hypothesis）和发现项（Finding）公共模型；
-- 证据驱动的诊断循环；
-- 评测框架。
+### 1. Ruff 基线清理
 
-PLC I/O 领域负责人负责：
+使用独立 PR 清理 `main` 中既有的 Ruff 问题，并在全仓 Ruff 通过后将 `ruff check .` 加入 CI。该工作只做工程治理，不修改业务逻辑、接口或领域内容。
 
-- PLC 状态机业务语义；
-- I/O 信号和点表；
-- 互锁规则；
-- 故障判据；
-- 标准答案；
-- 能力包审核。
+### 2. 统一可执行契约
 
-M2 不接入真实 PLC，不实现自动修改 PLC 程序。
+平台负责人下一阶段只处理公共契约：
+
+- 以 Pydantic 模型作为可执行契约唯一来源；
+- 自动生成 JSON Schema 并增加漂移测试；
+- 统一 Runner、Policy、Evidence 和 Checkpointer 接口；
+- 统一 Capability Pack Manifest 格式，但不修改专业参数；
+- 清理或隔离失效的旧 Runtime/LangGraph 占位；
+- 明确 Python 3.11、3.12、3.13 支持范围；
+- 增加真正的契约测试。
+
+PLC 与 MCU 领域负责人继续负责专业事实审核。平台公共接口和评测框架完成前，不冻结信号、互锁、波特率、引脚、故障判据、恢复方法或领域标准答案。
 
 ## 目录说明
 

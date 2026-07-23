@@ -1,5 +1,9 @@
 # 智能体架构
 
+本文件描述后续目标架构。当前活动入口是
+`industrial_test_agent.agent_runtime.graph.GraphRunner`，只运行 M1
+确定性最小图；以下专业子图和多智能体节点尚未实现。
+
 ## 根图
 
 案件执行图（Case Executive Graph）负责整个案件生命周期。
@@ -47,4 +51,5 @@
 - 智能体不能直接调用 MCP 或设备。
 - 智能体不能修改 Evidence。
 - 所有智能体共享统一 CaseState。
-- LangGraph 只负责流程编排。
+- 未来若引入 LangGraph，只能作为流程编排适配层复用现有 Pydantic
+  契约，不能形成第二套状态模型。

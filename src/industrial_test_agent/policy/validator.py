@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Optional
+
+from jsonschema import Draft202012Validator
 
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.case_state import CaseState
+from industrial_test_agent.domain.enums import RiskLevel, SideEffectType
+from industrial_test_agent.mcp.models import ToolCapability
 from industrial_test_agent.policy.decisions import PolicyResult
 
 
@@ -16,13 +20,15 @@ from industrial_test_agent.policy.decisions import PolicyResult
 class ToolRegistry:
     """Registered tool capabilities with schemas and risk levels."""
 
-    _tools: Dict[str, Dict[str, Any]] = {
-        "plc.read_interlock": {
-            "tool_id": "plc.read_interlock",
-            "name": "plc.read_interlock",
-            "risk_level": "low",
-            "write_operation": False,
-            "input_schema": {
+    _tools: dict[str, ToolCapability] = {
+        "plc.read_interlock": ToolCapability(
+            capability_id="plc.read_interlock",
+            display_name="plc.read_interlock",
+            description="M1 Mock capability for Runtime validation",
+            risk_level=RiskLevel.LOW,
+            requires_approval=False,
+            side_effect_type=SideEffectType.READ_ONLY,
+            input_schema={
                 "type": "object",
                 "properties": {
                     "group": {"type": "string"},
@@ -30,13 +36,15 @@ class ToolRegistry:
                 "required": ["group"],
                 "additionalProperties": False,
             },
-        },
-        "plc.read_signal": {
-            "tool_id": "plc.read_signal",
-            "name": "plc.read_signal",
-            "risk_level": "low",
-            "write_operation": False,
-            "input_schema": {
+        ),
+        "plc.read_signal": ToolCapability(
+            capability_id="plc.read_signal",
+            display_name="plc.read_signal",
+            description="M1 Mock capability for Runtime validation",
+            risk_level=RiskLevel.LOW,
+            requires_approval=False,
+            side_effect_type=SideEffectType.READ_ONLY,
+            input_schema={
                 "type": "object",
                 "properties": {
                     "signal_name": {"type": "string"},
@@ -44,13 +52,15 @@ class ToolRegistry:
                 "required": ["signal_name"],
                 "additionalProperties": False,
             },
-        },
-        "plc.wait_feedback": {
-            "tool_id": "plc.wait_feedback",
-            "name": "plc.wait_feedback",
-            "risk_level": "low",
-            "write_operation": False,
-            "input_schema": {
+        ),
+        "plc.wait_feedback": ToolCapability(
+            capability_id="plc.wait_feedback",
+            display_name="plc.wait_feedback",
+            description="M1 Mock capability for Runtime validation",
+            risk_level=RiskLevel.LOW,
+            requires_approval=False,
+            side_effect_type=SideEffectType.READ_ONLY,
+            input_schema={
                 "type": "object",
                 "properties": {
                     "feedback_name": {"type": "string"},
@@ -59,13 +69,15 @@ class ToolRegistry:
                 "required": ["feedback_name"],
                 "additionalProperties": False,
             },
-        },
-        "plc.write_test_signal": {
-            "tool_id": "plc.write_test_signal",
-            "name": "plc.write_test_signal",
-            "risk_level": "medium",
-            "write_operation": True,
-            "input_schema": {
+        ),
+        "plc.write_test_signal": ToolCapability(
+            capability_id="plc.write_test_signal",
+            display_name="plc.write_test_signal",
+            description="M1 Mock write capability requiring approval",
+            risk_level=RiskLevel.MEDIUM,
+            requires_approval=True,
+            side_effect_type=SideEffectType.TEST_WRITE,
+            input_schema={
                 "type": "object",
                 "properties": {
                     "signal_name": {"type": "string"},
@@ -74,11 +86,11 @@ class ToolRegistry:
                 "required": ["signal_name", "value"],
                 "additionalProperties": False,
             },
-        },
+        ),
     }
 
     @classmethod
-    def get_tool(cls, tool_name: str) -> Optional[Dict[str, Any]]:
+    def get_tool(cls, tool_name: str) -> Optional[ToolCapability]:
         return cls._tools.get(tool_name)
 
     @classmethod
@@ -113,7 +125,7 @@ class PolicyValidator:
         remaining_call_budget: Optional[int] = None,
     ) -> PolicyResult:
         # Rule 1: Tool whitelist
-        tool_name = intent.action_details.get("tool_capability", "")
+        tool_name = intent.capability_id
         if not self.tool_registry.is_allowed_tool(tool_name):
             return PolicyResult(
                 decision="rejected",
@@ -124,7 +136,7 @@ class PolicyValidator:
         assert tool_info is not None
 
         # Rule 2: Parameter schema validation
-        if not self._validate_params(tool_info, intent.action_details.get("arguments", {})):
+        if not self._validate_params(tool_info, intent.arguments):
             return PolicyResult(
                 decision="rejected",
                 reason="Action arguments do not match tool schema",
@@ -132,10 +144,10 @@ class PolicyValidator:
             )
 
         # Rule 3: Risk level
-        risk_level = tool_info.get("risk_level", "unknown")
+        risk_level = tool_info.risk_level
         requires_approval = (
-            tool_info.get("write_operation", False)
-            or risk_level not in self.allowed_risk_levels
+            tool_info.requires_approval
+            or risk_level.value not in self.allowed_risk_levels
         )
 
         # Rule 4: Remaining call budget
@@ -158,51 +170,22 @@ class PolicyValidator:
             return PolicyResult(
                 decision="approval_required",
                 reason=f"Tool '{tool_name}' requires human approval",
-                details={"tool": tool_name, "risk_level": risk_level},
+                details={
+                    "tool": tool_name,
+                    "risk_level": risk_level.value,
+                },
             )
 
         return PolicyResult(
             decision="allowed",
-            reason=f"Tool '{tool_name}' allowed (risk={risk_level})",
+            reason=f"Tool '{tool_name}' allowed (risk={risk_level.value})",
         )
 
     @staticmethod
-    def _validate_params(tool_info: Dict[str, Any], arguments: Dict[str, Any]) -> bool:
-        schema = tool_info.get("input_schema")
-        if not schema:
-            return True
-        if not isinstance(arguments, dict):
-            return False
-
-        required = schema.get("required", [])
-        if any(key not in arguments for key in required):
-            return False
-
-        properties = schema.get("properties", {})
-        if schema.get("additionalProperties") is False:
-            if any(key not in properties for key in arguments):
-                return False
-
-        for key, value in arguments.items():
-            expected_type = properties.get(key, {}).get("type")
-            if expected_type and not PolicyValidator._matches_json_type(
-                value, expected_type
-            ):
-                return False
-        return True
-
-    @staticmethod
-    def _matches_json_type(value: Any, expected_type: str) -> bool:
-        if expected_type == "string":
-            return isinstance(value, str)
-        if expected_type == "integer":
-            return isinstance(value, int) and not isinstance(value, bool)
-        if expected_type == "number":
-            return isinstance(value, (int, float)) and not isinstance(value, bool)
-        if expected_type == "boolean":
-            return isinstance(value, bool)
-        if expected_type == "object":
-            return isinstance(value, dict)
-        if expected_type == "array":
-            return isinstance(value, list)
-        return False
+    def _validate_params(
+        tool_info: ToolCapability,
+        arguments: dict[str, object],
+    ) -> bool:
+        return Draft202012Validator(tool_info.input_schema).is_valid(
+            arguments
+        )

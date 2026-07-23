@@ -1,44 +1,57 @@
-capability_pack_id: mcu_uart
+schema_version: "1.0"
+pack_id: mcu_uart
 name: "MCU UART 通信测试能力包"
-version: "0.1.0"
 domain: mcu
-owner: "MCU 成员"
-approver: "系统负责人"
+version: "0.1.0"
 status: draft
-risk_level: low
-
 description: >
   面向 MCU 嵌入式控制板的 UART 通信测试能力包。
   覆盖心跳检测、帧收发、波特率匹配等基础通信验证。
 
-supported_devices:
-  - "MCU 通用开发板 (UART)"
+entrypoints:
+  instructions: instructions.md
+  workflow: workflow.yaml
+  fault_catalog: fault_catalog/faults.yaml
+  examples: examples
+  evaluations: evals
 
-required_mcp_tools:
-  - mcu.read_heartbeat
-  - mcu.send_uart_frame
-  - mcu.read_uart_response
-  - mcu.read_gpio
-  - mcu.scan_i2c
+ownership:
+  implementation_owner: platform_lead
+  domain_owner: "MCU 成员"
+  platform_reviewer: "系统负责人"
+  domain_reviewer: "MCU 成员"
 
-permissions:
-  - read
-  - test_only_write
+review:
+  implementation_status: implemented
+  domain_review_status: pending
+  hardware_validation_status: not_started
 
-evidence_requirements:
-  - "UART 帧日志"
-  - "心跳超时记录"
-  - "GPIO 状态快照"
+safety:
+  risk_level: low
+  permissions:
+    - read
+    - test_only_write
 
-success_criteria:
-  - "心跳响应正常"
-  - "UART 帧收发一致"
-  - "波特率匹配无误"
-
-termination_criteria:
-  - "所有 UART 帧测试完成"
-  - "心跳超时不可恢复"
-  - "GPIO 状态异常不可恢复"
-
-regression_requirements:
-  - "变更后重新运行全部 UART 测试"
+metadata:
+  supported_devices:
+    - "MCU 通用开发板 (UART)"
+  required_mcp_tools:
+    - mcu.read_heartbeat
+    - mcu.send_uart_frame
+    - mcu.read_uart_response
+    - mcu.read_gpio
+    - mcu.scan_i2c
+  evidence_requirements:
+    - "UART 帧日志"
+    - "心跳超时记录"
+    - "GPIO 状态快照"
+  success_criteria:
+    - "心跳响应正常"
+    - "UART 帧收发一致"
+    - "波特率匹配无误"
+  termination_criteria:
+    - "所有 UART 帧测试完成"
+    - "心跳超时不可恢复"
+    - "GPIO 状态异常不可恢复"
+  regression_requirements:
+    - "变更后重新运行全部 UART 测试"

@@ -1,17 +1,81 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/evidence.schema.json",
-  "title": "Evidence",
-  "type": "object",
-  "properties": {
-    "evidenceId": {"type": "string"},
-    "observationId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "source": {"type": "string"},
-    "contentHash": {"type": "string"},
-    "metadata": {"type": "object"},
-    "createdAt": {"type": "string", "format": "date-time"}
+  "$defs": {
+    "EvidenceType": {
+      "enum": [
+        "tool_observation"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    }
   },
-  "required": ["evidenceId", "observationId", "caseId", "source", "contentHash", "createdAt"],
-  "additionalProperties": false
+  "$id": "urn:industrial-test-agent:schema:evidence:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "minLength": 1,
+      "title": "Action Id",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "content_hash": {
+      "minLength": 1,
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "minLength": 1,
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "evidence_type": {
+      "$ref": "#/$defs/EvidenceType"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "case_id",
+    "observation_id",
+    "action_id",
+    "evidence_type",
+    "payload",
+    "source",
+    "content_hash",
+    "idempotency_key"
+  ],
+  "title": "Evidence",
+  "type": "object"
 }

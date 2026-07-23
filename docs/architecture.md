@@ -1,5 +1,10 @@
 # 架构设计
 
+本文件描述目标架构。当前可运行实现是无外部工作流依赖的确定性 Runtime
+V0，只包含 ActionIntent、Policy、Mock Runner、Observation、Evidence、
+CaseState、Checkpoint 和恢复链路。工作台、多智能体、MCP、真实设备、
+人工审批和回归闭环尚未接入。
+
 ## 六层架构
 
 1. 测试工程工作台（Test Engineering Workspace）

@@ -25,18 +25,15 @@ class MockAgent:
         self.arguments = arguments or dict(self.DEFAULT_ARGS)
 
     def propose(self, case_state: CaseState) -> ActionIntent:
-        intent_id = f"act-{uuid.uuid4().hex[:8]}"
+        action_id = f"act-{uuid.uuid4().hex[:8]}"
         return ActionIntent(
-            intent_id=intent_id,
+            action_id=action_id,
             case_id=case_state.case_id,
-            action_type="test_request",
-            action_details={
-                "tool_capability": self.tool_name,
-                "arguments": self.arguments,
-            },
+            capability_id=self.tool_name,
+            arguments=self.arguments,
             reason=f"Confirm {self.tool_name} status for case {case_state.case_id}",
             requested_by="mock_agent",
-            priority="medium",
-            status="draft",
             created_at=datetime.now(timezone.utc),
+            idempotency_key=f"{case_state.case_id}:{action_id}",
+            metadata={"action_type": "test_request"},
         )

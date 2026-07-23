@@ -6,7 +6,6 @@ import pytest
 from pydantic import ValidationError
 
 from industrial_test_agent.domain.observation import Observation
-from industrial_test_agent.domain.evidence import Evidence
 from industrial_test_agent.evidence.exceptions import EvidenceConflictError
 from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 
@@ -81,14 +80,8 @@ class TestEvidenceStore:
         with pytest.raises(ValueError, match="already exists"):
             store.append(ev)  # same evidence object → duplicate ID
 
-    def test_evidence_is_immutable(self):
-        ev = Evidence(
-            evidence_id="ev-001",
-            observation_id="obs-001",
-            case_id="case-001",
-            source="test",
-            content_hash="abc123",
-        )
+    def test_evidence_is_immutable(self, store):
+        ev = store.append_from_observation(_obs())
         with pytest.raises(ValidationError):
             ev.evidence_id = "ev-002"
 
@@ -106,21 +99,17 @@ class TestEvidenceStore:
         self, store
     ) -> None:
         observation = _obs()
-        observation.payload["nested"] = {"items": [{"value": "original"}]}
+        observation.data["nested"] = {"items": [{"value": "original"}]}
         evidence = store.append_from_observation(observation)
 
         retrieved = store.get(evidence.evidence_id)
         assert retrieved is not None
-        retrieved.metadata["observation"]["payload"]["nested"]["items"][0][
-            "value"
-        ] = "tampered"
+        retrieved.payload["data"]["nested"]["items"][0]["value"] = "tampered"
 
         stored_again = store.get(evidence.evidence_id)
         assert stored_again is not None
         assert (
-            stored_again.metadata["observation"]["payload"]["nested"]["items"][
-                0
-            ]["value"]
+            stored_again.payload["data"]["nested"]["items"][0]["value"]
             == "original"
         )
 

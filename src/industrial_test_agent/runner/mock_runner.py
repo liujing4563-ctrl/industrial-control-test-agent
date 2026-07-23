@@ -7,7 +7,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 
 from industrial_test_agent.domain.action_intent import ActionIntent
-from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.domain.observation import (
+    Observation,
+    ObservationSourceType,
+    ObservationStatus,
+)
 
 
 class MockRunner:
@@ -20,8 +24,8 @@ class MockRunner:
     }
 
     def execute(self, intent: ActionIntent) -> Observation:
-        tool_name = intent.action_details.get("tool_capability", "unknown")
-        arguments = intent.action_details.get("arguments", {})
+        tool_name = intent.capability_id
+        arguments = intent.arguments
 
         if tool_name not in self.SUPPORTED_TOOLS:
             return self._error_obs(intent, f"Unsupported tool: {tool_name}")
@@ -36,17 +40,17 @@ class MockRunner:
         return Observation(
             observation_id=obs_id,
             case_id=intent.case_id,
-            source="mock_runner",
-            source_type="mock",
-            payload={
-                "action_id": intent.intent_id,
-                "success": True,
-                "status": "completed",
-                "data": data,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+            action_id=intent.action_id,
+            tool_id=tool_name,
+            status=ObservationStatus.SUCCEEDED,
+            success=True,
+            data=data,
+            received_at=datetime.now(timezone.utc),
+            source_type=ObservationSourceType.MOCK,
+            metadata={
+                "source": "mock_runner",
+                "schema_id": "observation",
             },
-            schema_id="observation",
-            related_action_intent_id=intent.intent_id,
         )
 
     # ---- tool-specific handlers ----
@@ -90,15 +94,16 @@ class MockRunner:
         return Observation(
             observation_id=obs_id,
             case_id=intent.case_id,
-            source="mock_runner",
-            source_type="mock",
-            payload={
-                "action_id": intent.intent_id,
-                "success": False,
-                "status": "error",
-                "error": message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+            action_id=intent.action_id,
+            tool_id=intent.capability_id,
+            status=ObservationStatus.EXECUTION_FAILED,
+            success=False,
+            error_code="unsupported_tool",
+            error_message=message,
+            received_at=datetime.now(timezone.utc),
+            source_type=ObservationSourceType.MOCK,
+            metadata={
+                "source": "mock_runner",
+                "schema_id": "observation",
             },
-            schema_id="observation",
-            related_action_intent_id=intent.intent_id,
         )

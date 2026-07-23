@@ -1,9 +1,10 @@
 import unittest
+from datetime import datetime, timezone
 
 from pydantic import ValidationError
 
 from industrial_test_agent.domain.case_state import CaseState
-from industrial_test_agent.domain.evidence import Evidence
+from industrial_test_agent.domain.evidence import Evidence, EvidenceType
 
 
 class TestDomainModels(unittest.TestCase):
@@ -12,8 +13,13 @@ class TestDomainModels(unittest.TestCase):
             evidence_id="ev-001",
             observation_id="obs-001",
             case_id="case-001",
+            action_id="act-001",
+            evidence_type=EvidenceType.TOOL_OBSERVATION,
+            payload={"result": "ok"},
             source="source",
             content_hash="hash",
+            created_at=datetime.now(timezone.utc),
+            idempotency_key="case-001:obs-001:tool-observation",
         )
         with self.assertRaises(ValidationError):
             evidence.evidence_id = "ev-002"

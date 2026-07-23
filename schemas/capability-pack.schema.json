@@ -1,19 +1,278 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/capability-pack.schema.json",
-  "title": "CapabilityPack",
-  "type": "object",
-  "properties": {
-    "capabilityPackId": {"type": "string"},
-    "name": {"type": "string"},
-    "version": {"type": "string"},
-    "domain": {"type": "string"},
-    "owner": {"type": "string"},
-    "status": {"type": "string"},
-    "riskLevel": {"type": "string"},
-    "requiredMcpTools": {"type": "array", "items": {"type": "string"}},
-    "evidenceRequirements": {"type": "array", "items": {"type": "string"}}
+  "$defs": {
+    "CapabilityPackEntrypoints": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluations": {
+          "title": "Evaluations",
+          "type": "string"
+        },
+        "examples": {
+          "title": "Examples",
+          "type": "string"
+        },
+        "fault_catalog": {
+          "title": "Fault Catalog",
+          "type": "string"
+        },
+        "instructions": {
+          "title": "Instructions",
+          "type": "string"
+        },
+        "workflow": {
+          "title": "Workflow",
+          "type": "string"
+        }
+      },
+      "required": [
+        "instructions",
+        "workflow",
+        "fault_catalog",
+        "examples",
+        "evaluations"
+      ],
+      "title": "CapabilityPackEntrypoints",
+      "type": "object"
+    },
+    "CapabilityPackMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Requirements",
+          "type": "array"
+        },
+        "regression_requirements": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Regression Requirements",
+          "type": "array"
+        },
+        "required_mcp_tools": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Mcp Tools",
+          "type": "array"
+        },
+        "success_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Success Criteria",
+          "type": "array"
+        },
+        "supported_devices": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Supported Devices",
+          "type": "array"
+        },
+        "termination_criteria": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Termination Criteria",
+          "type": "array"
+        }
+      },
+      "required": [
+        "supported_devices",
+        "required_mcp_tools",
+        "evidence_requirements",
+        "success_criteria",
+        "termination_criteria",
+        "regression_requirements"
+      ],
+      "title": "CapabilityPackMetadata",
+      "type": "object"
+    },
+    "CapabilityPackOwnership": {
+      "additionalProperties": false,
+      "properties": {
+        "domain_owner": {
+          "title": "Domain Owner",
+          "type": "string"
+        },
+        "domain_reviewer": {
+          "title": "Domain Reviewer",
+          "type": "string"
+        },
+        "implementation_owner": {
+          "title": "Implementation Owner",
+          "type": "string"
+        },
+        "platform_reviewer": {
+          "title": "Platform Reviewer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "implementation_owner",
+        "domain_owner",
+        "platform_reviewer",
+        "domain_reviewer"
+      ],
+      "title": "CapabilityPackOwnership",
+      "type": "object"
+    },
+    "CapabilityPackReview": {
+      "additionalProperties": false,
+      "properties": {
+        "domain_review_status": {
+          "$ref": "#/$defs/DomainReviewStatus"
+        },
+        "hardware_validation_status": {
+          "$ref": "#/$defs/HardwareValidationStatus"
+        },
+        "implementation_status": {
+          "$ref": "#/$defs/ImplementationStatus"
+        }
+      },
+      "required": [
+        "implementation_status",
+        "domain_review_status",
+        "hardware_validation_status"
+      ],
+      "title": "CapabilityPackReview",
+      "type": "object"
+    },
+    "CapabilityPackSafety": {
+      "additionalProperties": false,
+      "properties": {
+        "permissions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Permissions",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel"
+        }
+      },
+      "required": [
+        "risk_level",
+        "permissions"
+      ],
+      "title": "CapabilityPackSafety",
+      "type": "object"
+    },
+    "CapabilityPackStatus": {
+      "enum": [
+        "draft",
+        "validated",
+        "approved",
+        "deprecated"
+      ],
+      "title": "CapabilityPackStatus",
+      "type": "string"
+    },
+    "DomainReviewStatus": {
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "title": "DomainReviewStatus",
+      "type": "string"
+    },
+    "HardwareValidationStatus": {
+      "enum": [
+        "not_started",
+        "passed",
+        "failed"
+      ],
+      "title": "HardwareValidationStatus",
+      "type": "string"
+    },
+    "ImplementationStatus": {
+      "enum": [
+        "planned",
+        "implemented"
+      ],
+      "title": "ImplementationStatus",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
   },
-  "required": ["capabilityPackId", "name", "version", "domain", "owner", "status"],
-  "additionalProperties": false
+  "$id": "urn:industrial-test-agent:schema:capability-pack:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Platform structure only; nested domain values remain domain-owned.",
+  "properties": {
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "domain": {
+      "title": "Domain",
+      "type": "string"
+    },
+    "entrypoints": {
+      "$ref": "#/$defs/CapabilityPackEntrypoints"
+    },
+    "metadata": {
+      "$ref": "#/$defs/CapabilityPackMetadata"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "ownership": {
+      "$ref": "#/$defs/CapabilityPackOwnership"
+    },
+    "pack_id": {
+      "minLength": 1,
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "review": {
+      "$ref": "#/$defs/CapabilityPackReview"
+    },
+    "safety": {
+      "$ref": "#/$defs/CapabilityPackSafety"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CapabilityPackStatus"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "pack_id",
+    "name",
+    "domain",
+    "version",
+    "status",
+    "description",
+    "entrypoints",
+    "ownership",
+    "review",
+    "safety",
+    "metadata"
+  ],
+  "title": "CapabilityPackManifest",
+  "type": "object"
 }

@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Dict, Iterable, List, Optional
 
-from industrial_test_agent.domain.evidence import Evidence
+from industrial_test_agent.domain.evidence import Evidence, EvidenceType
 from industrial_test_agent.domain.observation import Observation
 from industrial_test_agent.evidence.exceptions import EvidenceConflictError
 
@@ -40,13 +40,16 @@ class EvidenceStore:
 
         evidence = Evidence(
             evidence_id=evidence_id,
-            idempotency_key=idempotency_key,
-            observation_id=obs.observation_id,
             case_id=obs.case_id,
+            observation_id=obs.observation_id,
+            action_id=obs.action_id,
+            evidence_type=EvidenceType.TOOL_OBSERVATION,
+            payload=obs.model_dump(mode="json"),
             source=obs.source,
             content_hash=content_hash,
-            metadata={"observation": obs.model_dump(mode="json")},
             created_at=datetime.now(timezone.utc),
+            idempotency_key=idempotency_key,
+            metadata={},
         )
 
         return self.append_once(evidence)
@@ -91,7 +94,11 @@ class EvidenceStore:
         self.append(evidence)
         return evidence
 
-    def restore_snapshot(self, evidences: Iterable[Evidence]) -> None:
+    def snapshot(self, case_id: str) -> List[Evidence]:
+        """Return an isolated, insertion-ordered snapshot for one case."""
+        return self.list_by_case(case_id)
+
+    def restore(self, evidences: Iterable[Evidence]) -> None:
         """Restore a validated checkpoint snapshot without duplicating records."""
         records = list(evidences)
 
@@ -113,6 +120,10 @@ class EvidenceStore:
 
         for evidence in records:
             self.append_once(evidence)
+
+    def restore_snapshot(self, evidences: Iterable[Evidence]) -> None:
+        """Compatibility alias for M1 callers."""
+        self.restore(evidences)
 
     def get(self, evidence_id: str) -> Optional[Evidence]:
         """Retrieve a single Evidence by ID."""
@@ -137,7 +148,10 @@ class EvidenceStore:
             "evidence_id",
             "idempotency_key",
             "observation_id",
+            "action_id",
             "case_id",
+            "evidence_type",
+            "payload",
             "source",
             "content_hash",
             "metadata",

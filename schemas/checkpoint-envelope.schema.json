@@ -1,0 +1,507 @@
+{
+  "$defs": {
+    "ActionIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "minLength": 1,
+          "title": "Action Id",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        },
+        "capability_id": {
+          "minLength": 1,
+          "title": "Capability Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "requested_by": {
+          "minLength": 1,
+          "title": "Requested By",
+          "type": "string"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "medium"
+        }
+      },
+      "required": [
+        "action_id",
+        "case_id",
+        "capability_id",
+        "requested_by",
+        "idempotency_key"
+      ],
+      "title": "ActionIntent",
+      "type": "object"
+    },
+    "CaseStage": {
+      "enum": [
+        "intake",
+        "initialized",
+        "planning",
+        "validation",
+        "execution",
+        "diagnosis",
+        "replanning",
+        "completed",
+        "escalated",
+        "rejected"
+      ],
+      "title": "CaseStage",
+      "type": "string"
+    },
+    "CaseState": {
+      "additionalProperties": false,
+      "properties": {
+        "action_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Action Ids",
+          "type": "array"
+        },
+        "active_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActionIntent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "goal": {
+          "default": "",
+          "title": "Goal",
+          "type": "string"
+        },
+        "hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hypotheses",
+          "type": "array"
+        },
+        "last_execution_success": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Execution Success"
+        },
+        "latest_observation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Observation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "next_node": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RuntimeNode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observation_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Observation Ids",
+          "type": "array"
+        },
+        "policy_decision": {
+          "anyOf": [
+            {
+              "enum": [
+                "allowed",
+                "rejected",
+                "approval_required"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Decision"
+        },
+        "policy_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Policy Reason"
+        },
+        "remaining_steps": {
+          "default": 20,
+          "minimum": 0,
+          "title": "Remaining Steps",
+          "type": "integer"
+        },
+        "replan_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Replan Count",
+          "type": "integer"
+        },
+        "stage": {
+          "$ref": "#/$defs/CaseStage",
+          "default": "initialized"
+        },
+        "termination_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Termination Reason"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "CaseState",
+      "type": "object"
+    },
+    "CheckpointMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "CheckpointMetadata",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "minLength": 1,
+          "title": "Action Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "minLength": 1,
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "evidence_type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "case_id",
+        "observation_id",
+        "action_id",
+        "evidence_type",
+        "payload",
+        "source",
+        "content_hash",
+        "idempotency_key"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "tool_observation"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "minLength": 1,
+          "title": "Action Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "error_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Message"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "source_type": {
+          "$ref": "#/$defs/ObservationSourceType"
+        },
+        "status": {
+          "$ref": "#/$defs/ObservationStatus"
+        },
+        "success": {
+          "title": "Success",
+          "type": "boolean"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "observation_id",
+        "case_id",
+        "action_id",
+        "tool_id",
+        "status",
+        "success",
+        "source_type"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "ObservationSourceType": {
+      "enum": [
+        "mock",
+        "runtime",
+        "mcp",
+        "simulator",
+        "hardware"
+      ],
+      "title": "ObservationSourceType",
+      "type": "string"
+    },
+    "ObservationStatus": {
+      "enum": [
+        "policy_rejected",
+        "execution_failed",
+        "test_failed",
+        "succeeded"
+      ],
+      "title": "ObservationStatus",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "RuntimeNode": {
+      "enum": [
+        "initialize_case",
+        "propose_action",
+        "validate_action",
+        "execute_action",
+        "record_observation",
+        "decide_next",
+        "finalize_case"
+      ],
+      "title": "RuntimeNode",
+      "type": "string"
+    }
+  },
+  "$id": "urn:industrial-test-agent:schema:checkpoint-envelope:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Self-contained Runtime state and Evidence snapshot.",
+  "properties": {
+    "checkpoint_version": {
+      "const": "2.0",
+      "title": "Checkpoint Version",
+      "type": "string"
+    },
+    "evidence_snapshot": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence Snapshot",
+      "type": "array"
+    },
+    "graph_state": {
+      "$ref": "#/$defs/CaseState"
+    },
+    "metadata": {
+      "$ref": "#/$defs/CheckpointMetadata"
+    }
+  },
+  "required": [
+    "checkpoint_version",
+    "graph_state",
+    "metadata"
+  ],
+  "title": "CheckpointEnvelope",
+  "type": "object"
+}

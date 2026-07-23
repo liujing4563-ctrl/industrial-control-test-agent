@@ -1,15 +1,17 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, Literal
+from typing import Any
+
+from pydantic import ConfigDict, Field
+
+from industrial_test_agent.contracts import ContractModel
+from industrial_test_agent.domain.enums import PolicyDecision
 
 
-PolicyDecision = Literal["allowed", "rejected", "approval_required"]
-
-
-@dataclass
-class PolicyResult:
+class PolicyResult(ContractModel):
     decision: PolicyDecision
     reason: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 def default_policy_result() -> PolicyResult:

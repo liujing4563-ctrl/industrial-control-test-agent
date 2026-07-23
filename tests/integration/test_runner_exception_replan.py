@@ -78,8 +78,8 @@ def test_runner_timeout_becomes_execution_failure_and_replans() -> None:
     assert state["stage"] == "completed"
     assert state["replan_count"] == 1
     failed = runner.evidence_store.list_by_case("case-timeout-kind")[0]
-    payload = failed.metadata["observation"]["payload"]
-    assert payload["failure_kind"] == "execution_failed"
+    payload = failed.payload
+    assert payload["status"] == "execution_failed"
     assert payload["error_code"] == "runner_timeout"
 
 
@@ -99,7 +99,7 @@ def test_runner_exception_message_redacts_common_credentials() -> None:
     runner.run("case-redaction", "validate error redaction")
 
     failed = runner.evidence_store.list_by_case("case-redaction")[0]
-    message = failed.metadata["observation"]["payload"]["error_message"]
+    message = failed.payload["error_message"]
     assert "visible-secret" not in message
     assert "another-secret" not in message
     assert SENSITIVE_LOCAL_PATH not in message
@@ -118,5 +118,6 @@ def test_policy_rejection_does_not_execute_runner_or_create_observation() -> Non
 
     assert state["stage"] == "rejected"
     assert counting_runner.calls == 0
-    assert state["latest_observation_id"] is None
+    assert state.latest_observation is None
+    assert state.observation_ids == []
     assert state["evidence_ids"] == []

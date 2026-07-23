@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
+from datetime import datetime, timezone
 from typing import Any, Dict, Mapping, Optional
 
 from industrial_test_agent.agent_runtime.checkpoint import (
     CHECKPOINT_VERSION,
+    LEGACY_CHECKPOINT_VERSION,
     CheckpointEnvelope,
     CheckpointGraphState,
     CheckpointMetadata,
@@ -19,7 +21,15 @@ from industrial_test_agent.agent_runtime.routing import (
     route_after_validation,
 )
 from industrial_test_agent.agents.mock_agent import MockAgent
+from industrial_test_agent.domain.case_state import (
+    CaseStage,
+    RuntimeNode,
+)
+from industrial_test_agent.domain.observation import ObservationStatus
+from industrial_test_agent.evidence.interfaces import EvidenceStoreProtocol
 from industrial_test_agent.policy.validator import PolicyValidator
+from industrial_test_agent.policy.interfaces import PolicyValidatorProtocol
+from industrial_test_agent.runner.interfaces import Runner
 from industrial_test_agent.runner.mock_runner import MockRunner
 from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 
@@ -30,9 +40,9 @@ class GraphRunner:
     def __init__(
         self,
         agent: Optional[MockAgent] = None,
-        policy: Optional[PolicyValidator] = None,
-        runner: Optional[MockRunner] = None,
-        evidence_store: Optional[EvidenceStore] = None,
+        policy: Optional[PolicyValidatorProtocol] = None,
+        runner: Optional[Runner] = None,
+        evidence_store: Optional[EvidenceStoreProtocol] = None,
         max_steps: int = 20,
         required_evidence_count: int = 1,
     ) -> None:
@@ -53,7 +63,7 @@ class GraphRunner:
         self.log: list[str] = []
 
     @property
-    def evidence_store(self) -> EvidenceStore:
+    def evidence_store(self) -> EvidenceStoreProtocol:
         return self.context.evidence_store
 
     @property
@@ -61,11 +71,11 @@ class GraphRunner:
         return self.context.agent
 
     @property
-    def policy(self) -> PolicyValidator:
+    def policy(self) -> PolicyValidatorProtocol:
         return self.context.policy
 
     @property
-    def runner(self) -> MockRunner:
+    def runner(self) -> Runner:
         return self.context.runner
 
     @property
@@ -104,7 +114,7 @@ class GraphRunner:
             payload = deepcopy(dict(checkpoint))
 
         envelope = self._load_checkpoint(payload)
-        self.evidence_store.restore_snapshot(envelope.evidence_snapshot)
+        self.evidence_store.restore(envelope.evidence_snapshot)
         unresolved_ids = [
             evidence_id
             for evidence_id in envelope.graph_state.evidence_ids
@@ -114,15 +124,21 @@ class GraphRunner:
             raise RuntimeError(
                 f"Checkpoint restore left unresolved Evidence IDs: {unresolved_ids}"
             )
-        state = envelope.graph_state.to_runtime_state()
+        state = envelope.graph_state.model_copy(deep=True)
         return self._run_state(state, max_node_executions=max_node_executions)
 
     def checkpoint(self, state: CaseGraphState) -> str:
         """Serialize graph state and its Evidence records as a versioned bundle."""
-        graph_state = CheckpointGraphState.model_validate(state)
+        graph_state = CheckpointGraphState.model_validate(
+            state.model_dump(mode="json")
+        )
+        available_evidence = {
+            evidence.evidence_id: evidence
+            for evidence in self.evidence_store.snapshot(state.case_id)
+        }
         evidence_snapshot = []
         for evidence_id in graph_state.evidence_ids:
-            evidence = self.evidence_store.get(evidence_id)
+            evidence = available_evidence.get(evidence_id)
             if evidence is None:
                 raise ValueError(
                     f"Checkpoint references missing Evidence: {evidence_id}"
@@ -138,24 +154,13 @@ class GraphRunner:
         return envelope.model_dump_json()
 
     def _new_state(self, case_id: str, goal: str) -> CaseGraphState:
-        return {
-            "case_id": case_id,
-            "goal": goal,
-            "stage": "initialized",
-            "proposed_action_id": None,
-            "proposed_action": None,
-            "latest_observation_id": None,
-            "latest_observation": None,
-            "evidence_ids": [],
-            "hypothesis_ids": [],
-            "remaining_steps": self.context.max_steps,
-            "replan_count": 0,
-            "last_execution_success": None,
-            "termination_reason": None,
-            "policy_decision": None,
-            "policy_reason": None,
-            "next_node": "initialize_case",
-        }
+        return CaseGraphState(
+            case_id=case_id,
+            goal=goal,
+            stage=CaseStage.INITIALIZED,
+            remaining_steps=self.context.max_steps,
+            next_node=RuntimeNode.INITIALIZE_CASE,
+        )
 
     def _run_state(
         self,
@@ -167,11 +172,15 @@ class GraphRunner:
         while state.get("next_node") is not None:
             if max_node_executions is not None and executed >= max_node_executions:
                 break
-            self._execute_node(state, state["next_node"])
+            self._execute_node(state, state.next_node)
             executed += 1
         return state
 
-    def _execute_node(self, state: CaseGraphState, node_name: str) -> None:
+    def _execute_node(
+        self,
+        state: CaseGraphState,
+        node_name: RuntimeNode,
+    ) -> None:
         if node_name == "initialize_case":
             self._apply(state, nodes.initialize_case(state, self.context))
             state["next_node"] = "propose_action"
@@ -180,7 +189,8 @@ class GraphRunner:
 
         if node_name == "propose_action":
             self._apply(state, nodes.propose_action(state, self.context))
-            tool_name = state["proposed_action"]["action_details"]["tool_capability"]
+            assert state.active_action is not None
+            tool_name = state.active_action.capability_id
             state["next_node"] = "validate_action"
             self._log(f"action proposed: {tool_name}")
             return
@@ -216,10 +226,12 @@ class GraphRunner:
 
         if node_name == "decide_next":
             self._apply(state, nodes.decide_next(state, self.context))
-            if state["stage"] == "replanning":
-                observation = state.get("latest_observation") or {}
-                payload = observation.get("payload", {})
-                if payload.get("failure_kind") == "test_failed":
+            if state.stage is CaseStage.REPLANNING:
+                observation = state.latest_observation
+                if (
+                    observation is not None
+                    and observation.status is ObservationStatus.TEST_FAILED
+                ):
                     self._log("test failure routed to replan")
                 else:
                     self._log("runner failure routed to replan")
@@ -229,7 +241,7 @@ class GraphRunner:
         if node_name == "finalize_case":
             self._apply(state, nodes.finalize_case(state, self.context))
             state["next_node"] = None
-            self._log("case " + state["stage"])
+            self._log("case " + state.stage.value)
             return
 
         raise ValueError(f"Unknown graph node: {node_name}")
@@ -238,13 +250,17 @@ class GraphRunner:
     def _apply(state: CaseGraphState, updates: Dict[str, Any]) -> None:
         for key, value in updates.items():
             if key in state:
-                state[key] = value  # type: ignore[literal-required]
+                state[key] = value
+        state.updated_at = datetime.now(timezone.utc)
 
     def _load_checkpoint(self, payload: Mapping[str, Any]) -> CheckpointEnvelope:
         if "graph_state" in payload:
             normalized = self._normalize_envelope(payload)
             version = normalized.get("checkpoint_version")
-            if version != CHECKPOINT_VERSION:
+            if version not in {
+                CHECKPOINT_VERSION,
+                LEGACY_CHECKPOINT_VERSION,
+            }:
                 raise ValueError(f"Unsupported checkpoint version: {version}")
             return CheckpointEnvelope.model_validate(normalized)
 
@@ -294,7 +310,7 @@ class GraphRunner:
 
         normalized = deepcopy(dict(payload))
         normalized.pop("checkpoint_metadata")
-        normalized["checkpoint_version"] = CHECKPOINT_VERSION
+        normalized["checkpoint_version"] = LEGACY_CHECKPOINT_VERSION
         normalized["metadata"] = {"case_id": legacy_metadata.get("case_id")}
         return normalized
 

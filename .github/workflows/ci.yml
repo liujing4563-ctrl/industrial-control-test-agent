@@ -29,6 +29,9 @@ jobs:
       - name: Ruff
         run: ruff check .
 
+      - name: Contract drift
+        run: python -m industrial_test_agent.schemas.generate --check
+
       - name: Compile check
         run: python -m compileall src
 

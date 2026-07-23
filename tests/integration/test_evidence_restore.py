@@ -29,8 +29,8 @@ def test_restored_nested_metadata_is_isolated_between_reads() -> None:
 
     first = restored.evidence_store.get(evidence_id)
     assert first is not None
-    first.metadata["observation"]["payload"]["data"]["all_clear"] = False
+    first.payload["data"]["all_clear"] = False
 
     second = restored.evidence_store.get(evidence_id)
     assert second is not None
-    assert second.metadata["observation"]["payload"]["data"]["all_clear"] is True
+    assert second.payload["data"]["all_clear"] is True

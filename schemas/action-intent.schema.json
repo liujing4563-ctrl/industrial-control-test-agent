@@ -1,24 +1,77 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/action-intent.schema.json",
-  "title": "ActionIntent",
-  "type": "object",
-  "properties": {
-    "intentId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "agentId": {"type": "string"},
-    "actionType": {"type": "string"},
-    "actionDetails": {"type": "object"},
-    "reason": {"type": "string"},
-    "requestedBy": {"type": "string"},
-    "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
-    "status": {"type": "string", "enum": ["draft", "submitted", "approved", "rejected", "executing", "completed"]},
-    "targetResource": {"type": "string"},
-    "relatedEvidenceIds": {"type": "array", "items": {"type": "string"}},
-    "createdAt": {"type": "string", "format": "date-time"},
-    "approvedBy": {"type": "string"},
-    "approvedAt": {"type": "string", "format": "date-time"}
+  "$defs": {
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
   },
-  "required": ["intentId", "caseId", "actionType", "reason", "requestedBy", "createdAt"],
-  "additionalProperties": false
+  "$id": "urn:industrial-test-agent:schema:action-intent:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "minLength": 1,
+      "title": "Action Id",
+      "type": "string"
+    },
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
+    },
+    "capability_id": {
+      "minLength": 1,
+      "title": "Capability Id",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "reason": {
+      "default": "",
+      "title": "Reason",
+      "type": "string"
+    },
+    "requested_by": {
+      "minLength": 1,
+      "title": "Requested By",
+      "type": "string"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "medium"
+    }
+  },
+  "required": [
+    "action_id",
+    "case_id",
+    "capability_id",
+    "requested_by",
+    "idempotency_key"
+  ],
+  "title": "ActionIntent",
+  "type": "object"
 }

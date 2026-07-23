@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from datetime import datetime, timezone
 
 from industrial_test_agent.domain.case_state import CaseState
 from industrial_test_agent.domain.action_intent import ActionIntent

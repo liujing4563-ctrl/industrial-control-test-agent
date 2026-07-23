@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-
 from industrial_test_agent.agent_runtime.graph import GraphRunner
 from industrial_test_agent.agents.mock_agent import MockAgent
-from industrial_test_agent.policy.validator import PolicyValidator
-from industrial_test_agent.runner.mock_runner import MockRunner
-from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.evidence.in_memory_store import EvidenceStore
+from industrial_test_agent.runner.mock_runner import MockRunner
 
 
 class FailOnceRunner(MockRunner):

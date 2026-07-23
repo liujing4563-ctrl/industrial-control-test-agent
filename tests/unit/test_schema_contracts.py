@@ -1,8 +1,6 @@
 import json
 import unittest
 
-from pydantic import BaseModel
-
 from industrial_test_agent.domain.case_state import CaseState
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.observation import Observation

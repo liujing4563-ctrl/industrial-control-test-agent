@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict
 
-from industrial_test_agent.agent_runtime.base import GraphContext, GraphNode, NodeExecutionResult
-from industrial_test_agent.agent_runtime.state import CaseGraphState
+from industrial_test_agent.agent_runtime.base import GraphContext, GraphNode
 
 
 class GraphRunner:

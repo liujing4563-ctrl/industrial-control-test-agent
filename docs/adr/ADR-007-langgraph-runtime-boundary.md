@@ -1,7 +1,7 @@
 # ADR-007：LangGraph 运行时边界
 
 ## 状态
-已接受
+Superseded by ADR-009
 
 ## 背景
 

@@ -14,7 +14,7 @@ pip install -e ".[dev]"
 ruff check .
 
 # 契约漂移检查
-python -m industrial_test_agent.contracts.json_schema --check
+python -m industrial_test_agent.schemas.generate --check
 
 # 编译检查
 python -m compileall src
@@ -23,7 +23,7 @@ python -m compileall src
 pytest -q
 ```
 
-> 当前状态：M1 智能体运行时 V0、恢复可靠性强化与可执行契约统一已完成 · 103 项测试通过 · CI 验证 Python 3.11/3.12/3.13
+> 当前分支状态：M1 智能体运行时 V0、恢复可靠性强化与可执行契约统一已完成 · 121 项测试通过 · CI 验证 Python 3.11/3.12
 
 ---
 
@@ -49,7 +49,10 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 
 ---
 
-## 系统架构
+## 目标系统架构
+
+下图描述项目目标架构。当前仓库只实现了 M1 确定性 Runtime
+及其公共契约，未实现的组件见后文“当前未接入”。
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -119,10 +122,14 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 
 当前未接入：
 
+- LangGraph 正式运行时；
 - 真实 LLM；
 - MCP Server；
+- PLC 完整领域闭环；
+- MCU 完整领域闭环；
 - PLC 或 MCU 真实硬件；
 - Web 前端；
+- 数据库；
 - 多智能体协作。
 
 ### 当前恢复边界
@@ -185,12 +192,12 @@ reason=Case completed - 1 evidence record collected (threshold=1)
 
 仓库当前包含两个能力包草案：
 
-| 能力包 | 当前状态 | 领域审核要求 |
-|---|---|---|
-| `plc_start_feedback` | 草案（Draft） | 需要 PLC I/O 领域负责人审核信号、互锁、超时、故障判据和恢复方法 |
-| `mcu_uart` | 草案（Draft） | 需要 MCU 领域负责人审核测试帧、引脚、波特率、故障判据和硬件检查方法 |
+| 能力包 | 状态 | 领域审核 | 硬件验证 |
+|---|---|---|---|
+| `plc_start_feedback` | `draft` | `pending` | `not_started` |
+| `mcu_uart` | `draft` | `pending` | `not_started` |
 
-这些能力包当前用于架构验证和接口设计。
+这些能力包当前仅用于架构验证和接口设计。PLC I/O 领域负责人仍需审核信号、互锁、超时、故障判据和恢复方法；MCU 领域负责人仍需审核测试帧、引脚、波特率、故障判据和硬件检查方法。
 
 在对应领域负责人完成审核前，它们不代表正式工业测试规范，也不应作为真实设备自动测试依据。
 
@@ -219,7 +226,7 @@ Ruff 基线清理（已完成）
 - 统一 Runner、Policy、Evidence 和 Checkpointer 接口；
 - 统一 Capability Pack Manifest 格式，但不修改专业参数；
 - 清理或隔离失效的旧 Runtime/LangGraph 占位；
-- 明确 Python 3.11、3.12、3.13 支持范围；
+- 明确 CI 当前验证 Python 3.11 和 3.12；
 - 增加真正的契约测试。
 
 下一阶段只建立领域接入公共接口。PLC 与 MCU 领域负责人继续负责专业事实审核；在领域审核前，不冻结信号、互锁、波特率、引脚、故障判据、恢复方法或领域标准答案。
@@ -250,7 +257,7 @@ Ruff 基线清理（已完成）
 | [安全边界](docs/safety-boundary.md) | 注册/计划/执行三阶段安全 |
 | [职责边界](docs/ownership-boundary.md) | 平台、PLC I/O 与 MCU 领域的所有权和审核规则 |
 | [团队工作包](docs/team-work-packages.md) | 三人分工与负责目录 |
-| [ADR 记录](docs/adr/) | 8 条架构决策记录 |
+| [ADR 记录](docs/adr/) | 架构决策记录 |
 
 ## 运行检查
 
@@ -262,7 +269,7 @@ pip install -e ".[dev]"
 ruff check .
 
 # 契约漂移检查
-python -m industrial_test_agent.contracts.json_schema --check
+python -m industrial_test_agent.schemas.generate --check
 
 # 运行 M1 演示
 python -m industrial_test_agent.agent_runtime.demo

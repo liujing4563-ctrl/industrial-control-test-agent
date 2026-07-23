@@ -1,5 +1,8 @@
 # MCP 集成
 
+本文件描述后续集成边界。当前仓库尚未接入 MCP Server 或真实 MCP
+Gateway；M1 由 Mock Runner 直接返回 Observation。
+
 ## 关键链路
 
 智能体（Agent）

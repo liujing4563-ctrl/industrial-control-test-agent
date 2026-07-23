@@ -10,7 +10,7 @@
 
 ```bash
 ruff check .
-python -m industrial_test_agent.contracts.json_schema --check
+python -m industrial_test_agent.schemas.generate --check
 python -m compileall src
 pytest
 ```

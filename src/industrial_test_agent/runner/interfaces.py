@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from industrial_test_agent.domain.action_intent import ActionIntent
+from industrial_test_agent.domain.observation import Observation
 
 
-class RunnerInterface(Protocol):
-    def execute(self, action_intent: ActionIntent) -> "RunnerResult":
+@runtime_checkable
+class Runner(Protocol):
+    """Execute one validated action and return the canonical Observation."""
+
+    def execute(self, action_intent: ActionIntent) -> Observation:
         ...
 
 
-class RunnerResult(ABC):
-    @abstractmethod
-    def is_success(self) -> bool:
-        raise NotImplementedError
+RunnerInterface = Runner
+
+__all__ = ["Runner", "RunnerInterface"]

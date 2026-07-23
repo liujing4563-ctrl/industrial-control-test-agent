@@ -1,47 +1,124 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/case-state.schema.json",
-  "title": "CaseState",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "caseId": {"type": "string"},
-    "testObjective": {"type": "string"},
+    "approval_status": {
+      "default": "pending",
+      "title": "Approval Status",
+      "type": "string"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "current_phase": {
+      "title": "Current Phase",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "excluded_causes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Excluded Causes",
+      "type": "array"
+    },
+    "hypothesis_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hypothesis Ids",
+      "type": "array"
+    },
+    "pending_approval_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pending Approval Id"
+    },
+    "regression_status": {
+      "default": "pending",
+      "title": "Regression Status",
+      "type": "string"
+    },
+    "remaining_budget": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Remaining Budget"
+    },
     "requirements": {
-      "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {"type": "string"},
-          "description": {"type": "string"},
-          "status": {"type": "string"}
-        },
-        "required": ["id", "description"]
-      }
+        "type": "string"
+      },
+      "title": "Requirements",
+      "type": "array"
     },
-    "testCases": {
-      "type": "array",
+    "root_cause_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Root Cause Id"
+    },
+    "test_cases": {
       "items": {
-        "type": "object",
-        "properties": {
-          "caseId": {"type": "string"},
-          "description": {"type": "string"},
-          "expectedOutcome": {"type": "string"},
-          "status": {"type": "string"}
-        },
-        "required": ["caseId", "description", "expectedOutcome"]
-      }
+        "type": "string"
+      },
+      "title": "Test Cases",
+      "type": "array"
     },
-    "currentPhase": {"type": "string"},
-    "evidenceIds": {"type": "array", "items": {"type": "string"}},
-    "hypotheses": {"type": "array", "items": {"type": "string"}},
-    "excludedCauses": {"type": "array", "items": {"type": "string"}},
-    "remainingBudget": {"type": "number"},
-    "approvalStatus": {"type": "string"},
-    "regressionStatus": {"type": "string"},
-    "owner": {"type": "string"},
-    "createdAt": {"type": "string", "format": "date-time"},
-    "updatedAt": {"type": "string", "format": "date-time"}
+    "test_objective": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Test Objective"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
   },
-  "required": ["caseId", "testObjective", "currentPhase", "approvalStatus", "regressionStatus"],
-  "additionalProperties": false
+  "required": [
+    "case_id",
+    "current_phase"
+  ],
+  "title": "CaseState",
+  "type": "object"
 }

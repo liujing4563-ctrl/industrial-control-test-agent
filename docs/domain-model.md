@@ -25,7 +25,7 @@
 
 ## 案件状态（CaseState）
 - 含义：案件当前事实与生命周期。
-- 关键字段：case_id、current_phase、evidence_ids、hypotheses、approval_status、regression_status。
+- 关键字段：case_id、current_phase、evidence_ids、hypothesis_ids、approval_status、regression_status。
 - 谁能创建：Orchestrator。
 - 谁能读取：所有智能体与工作流。
 - 谁能修改：Orchestrator 与 Policy。
@@ -44,7 +44,7 @@
 
 ## 证据（Evidence）
 - 含义：原始证据记录。
-- 关键字段：evidence_id、observation_id、case_id、source、content_hash、created_at。
+- 关键字段：evidence_id、idempotency_key、observation_id、case_id、source、content_hash、created_at。
 - 谁能创建：证据存储。
 - 只能追加。
 
@@ -76,10 +76,17 @@
 - 关键字段：regression_id、case_id、triggered_by、outcome、evidence_ids。
 - 谁能创建：执行器。
 
-## 能力包（CapabilityPack）
+## 能力包清单（CapabilityPackManifest）
 - 含义：测试能力包元数据与规则。
-- 关键字段：capability_pack_id、name、version、domain、risk_level。
+- 关键字段：capability_pack_id、name、version、domain、owner、approver、status、risk_level。
 
 ## 工具能力（ToolCapability）
 - 含义：MCP 工具能力声明。
 - 关键字段：tool_id、name、transport、input_schema、output_schema、permissions。
+
+## 契约约定
+
+- Pydantic 模型是可执行契约唯一来源。
+- Python、YAML 和 JSON 字段统一使用 `snake_case`。
+- 未声明字段默认拒绝。
+- `schemas/` 中的 JSON Schema 由模型生成并通过 CI 检查漂移。

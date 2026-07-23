@@ -19,7 +19,10 @@ from industrial_test_agent.agent_runtime.routing import (
     route_after_validation,
 )
 from industrial_test_agent.agents.mock_agent import MockAgent
+from industrial_test_agent.evidence.interfaces import EvidenceStoreProtocol
 from industrial_test_agent.policy.validator import PolicyValidator
+from industrial_test_agent.policy.interfaces import PolicyValidatorProtocol
+from industrial_test_agent.runner.interfaces import Runner
 from industrial_test_agent.runner.mock_runner import MockRunner
 from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 
@@ -30,9 +33,9 @@ class GraphRunner:
     def __init__(
         self,
         agent: Optional[MockAgent] = None,
-        policy: Optional[PolicyValidator] = None,
-        runner: Optional[MockRunner] = None,
-        evidence_store: Optional[EvidenceStore] = None,
+        policy: Optional[PolicyValidatorProtocol] = None,
+        runner: Optional[Runner] = None,
+        evidence_store: Optional[EvidenceStoreProtocol] = None,
         max_steps: int = 20,
         required_evidence_count: int = 1,
     ) -> None:
@@ -53,7 +56,7 @@ class GraphRunner:
         self.log: list[str] = []
 
     @property
-    def evidence_store(self) -> EvidenceStore:
+    def evidence_store(self) -> EvidenceStoreProtocol:
         return self.context.evidence_store
 
     @property
@@ -61,11 +64,11 @@ class GraphRunner:
         return self.context.agent
 
     @property
-    def policy(self) -> PolicyValidator:
+    def policy(self) -> PolicyValidatorProtocol:
         return self.context.policy
 
     @property
-    def runner(self) -> MockRunner:
+    def runner(self) -> Runner:
         return self.context.runner
 
     @property

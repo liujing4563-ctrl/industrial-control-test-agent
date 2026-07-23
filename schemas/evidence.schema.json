@@ -1,17 +1,60 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/evidence.schema.json",
-  "title": "Evidence",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "evidenceId": {"type": "string"},
-    "observationId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "source": {"type": "string"},
-    "contentHash": {"type": "string"},
-    "metadata": {"type": "object"},
-    "createdAt": {"type": "string", "format": "date-time"}
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "content_hash": {
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "minLength": 1,
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    }
   },
-  "required": ["evidenceId", "observationId", "caseId", "source", "contentHash", "createdAt"],
-  "additionalProperties": false
+  "required": [
+    "evidence_id",
+    "observation_id",
+    "case_id",
+    "source",
+    "content_hash"
+  ],
+  "title": "Evidence",
+  "type": "object"
 }

@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 from typing import Any, Literal, Optional, Self, cast
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from industrial_test_agent.agent_runtime.state import CaseGraphState
+from industrial_test_agent.contracts import ContractModel
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.evidence import Evidence
 from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.policy.decisions import PolicyDecision
 
 
 Stage = Literal[
@@ -33,11 +35,10 @@ NodeName = Literal[
     "decide_next",
     "finalize_case",
 ]
-PolicyDecision = Literal["allowed", "rejected", "approval_required"]
 CHECKPOINT_VERSION = "1.0"
 
 
-class CheckpointGraphState(BaseModel):
+class CheckpointGraphState(ContractModel):
     """Validated serialized representation of CaseGraphState."""
 
     case_id: str = Field(min_length=1)
@@ -160,13 +161,13 @@ class CheckpointGraphState(BaseModel):
         return cast(CaseGraphState, self.model_dump(mode="json"))
 
 
-class CheckpointMetadata(BaseModel):
+class CheckpointMetadata(ContractModel):
     case_id: str = Field(min_length=1)
 
     model_config = ConfigDict(extra="forbid")
 
 
-class CheckpointEnvelope(BaseModel):
+class CheckpointEnvelope(ContractModel):
     """Self-contained state and Evidence snapshot used for recovery."""
 
     checkpoint_version: Literal["1.0"]

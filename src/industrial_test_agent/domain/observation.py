@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from industrial_test_agent.contracts import ContractModel
 
 
-class Observation(BaseModel):
-    observation_id: str
-    case_id: str
+class Observation(ContractModel):
+    observation_id: str = Field(min_length=1)
+    case_id: str = Field(min_length=1)
     source: str
     source_type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     schema_id: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     related_action_intent_id: Optional[str] = None
-
-    model_config = ConfigDict(frozen=False)

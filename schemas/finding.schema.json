@@ -1,17 +1,62 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/finding.schema.json",
-  "title": "Finding",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "findingId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "summary": {"type": "string"},
-    "severity": {"type": "string"},
-    "status": {"type": "string"},
-    "createdAt": {"type": "string", "format": "date-time"},
-    "relatedEvidenceIds": {"type": "array", "items": {"type": "string"}}
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "closed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Closed At"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "finding_id": {
+      "minLength": 1,
+      "title": "Finding Id",
+      "type": "string"
+    },
+    "related_evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Related Evidence Ids",
+      "type": "array"
+    },
+    "severity": {
+      "title": "Severity",
+      "type": "string"
+    },
+    "status": {
+      "default": "open",
+      "title": "Status",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    }
   },
-  "required": ["findingId", "caseId", "summary", "severity", "status", "createdAt"],
-  "additionalProperties": false
+  "required": [
+    "finding_id",
+    "case_id",
+    "summary",
+    "severity"
+  ],
+  "title": "Finding",
+  "type": "object"
 }

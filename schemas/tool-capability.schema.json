@@ -1,16 +1,45 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/tool-capability.schema.json",
-  "title": "ToolCapability",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "toolId": {"type": "string"},
-    "name": {"type": "string"},
-    "transport": {"type": "string"},
-    "inputSchema": {"type": "object"},
-    "outputSchema": {"type": "object"},
-    "permissions": {"type": "array", "items": {"type": "string"}}
+    "input_schema": {
+      "additionalProperties": true,
+      "title": "Input Schema",
+      "type": "object"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "output_schema": {
+      "additionalProperties": true,
+      "title": "Output Schema",
+      "type": "object"
+    },
+    "permissions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Permissions",
+      "type": "array"
+    },
+    "tool_id": {
+      "minLength": 1,
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "transport": {
+      "title": "Transport",
+      "type": "string"
+    }
   },
-  "required": ["toolId", "name", "transport", "inputSchema", "outputSchema"],
-  "additionalProperties": false
+  "required": [
+    "tool_id",
+    "name",
+    "transport",
+    "input_schema",
+    "output_schema"
+  ],
+  "title": "ToolCapability",
+  "type": "object"
 }

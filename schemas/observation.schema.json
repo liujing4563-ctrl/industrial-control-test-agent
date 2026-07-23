@@ -1,20 +1,60 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/observation.schema.json",
-  "title": "Observation",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "observationId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "source": {"type": "string"},
-    "sourceType": {"type": "string"},
-    "toolId": {"type": "string"},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "receivedAt": {"type": "string", "format": "date-time"},
-    "payload": {"type": "object"},
-    "schemaId": {"type": "string"},
-    "relatedActionIntentId": {"type": "string"}
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "related_action_intent_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Related Action Intent Id"
+    },
+    "schema_id": {
+      "title": "Schema Id",
+      "type": "string"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "source_type": {
+      "title": "Source Type",
+      "type": "string"
+    },
+    "timestamp": {
+      "format": "date-time",
+      "title": "Timestamp",
+      "type": "string"
+    }
   },
-  "required": ["observationId", "caseId", "source", "timestamp", "payload", "schemaId"],
-  "additionalProperties": false
+  "required": [
+    "observation_id",
+    "case_id",
+    "source",
+    "source_type",
+    "payload",
+    "schema_id"
+  ],
+  "title": "Observation",
+  "type": "object"
 }

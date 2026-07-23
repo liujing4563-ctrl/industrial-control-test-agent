@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from industrial_test_agent.contracts import ContractModel
 
 
-class Hypothesis(BaseModel):
-    hypothesis_id: str
-    case_id: str
+class Hypothesis(ContractModel):
+    hypothesis_id: str = Field(min_length=1)
+    case_id: str = Field(min_length=1)
     description: str
     confidence: float
     status: str = "open"
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    model_config = ConfigDict(frozen=False)

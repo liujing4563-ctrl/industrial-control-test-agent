@@ -1,21 +1,23 @@
-from typing import Dict, List, Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import Field
+
+from industrial_test_agent.contracts import ContractModel
 
 
-class ToolCapability(BaseModel):
-    tool_id: str
+class ToolCapability(ContractModel):
+    tool_id: str = Field(min_length=1)
     name: str
     transport: str
-    input_schema: Dict[str, object]
-    output_schema: Dict[str, object]
-    permissions: List[str] = []
+    input_schema: dict[str, Any]
+    output_schema: dict[str, Any]
+    permissions: list[str] = Field(default_factory=list)
 
 
-class MCPRegistration(BaseModel):
-    server_id: str
+class MCPRegistration(ContractModel):
+    server_id: str = Field(min_length=1)
     version: str
-    tools: List[ToolCapability]
+    tools: list[ToolCapability]
     network_scope: Optional[str] = None
     timeout_seconds: Optional[int] = 30
     max_calls: Optional[int] = 10

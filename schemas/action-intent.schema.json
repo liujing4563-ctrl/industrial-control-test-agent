@@ -1,24 +1,124 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/action-intent.schema.json",
-  "title": "ActionIntent",
-  "type": "object",
-  "properties": {
-    "intentId": {"type": "string"},
-    "caseId": {"type": "string"},
-    "agentId": {"type": "string"},
-    "actionType": {"type": "string"},
-    "actionDetails": {"type": "object"},
-    "reason": {"type": "string"},
-    "requestedBy": {"type": "string"},
-    "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
-    "status": {"type": "string", "enum": ["draft", "submitted", "approved", "rejected", "executing", "completed"]},
-    "targetResource": {"type": "string"},
-    "relatedEvidenceIds": {"type": "array", "items": {"type": "string"}},
-    "createdAt": {"type": "string", "format": "date-time"},
-    "approvedBy": {"type": "string"},
-    "approvedAt": {"type": "string", "format": "date-time"}
+  "$defs": {
+    "ActionPriority": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "ActionPriority",
+      "type": "string"
+    },
+    "ActionStatus": {
+      "enum": [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "executing",
+        "completed"
+      ],
+      "title": "ActionStatus",
+      "type": "string"
+    }
   },
-  "required": ["intentId", "caseId", "actionType", "reason", "requestedBy", "createdAt"],
-  "additionalProperties": false
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_details": {
+      "additionalProperties": true,
+      "title": "Action Details",
+      "type": "object"
+    },
+    "action_type": {
+      "title": "Action Type",
+      "type": "string"
+    },
+    "approved_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved By"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "intent_id": {
+      "minLength": 1,
+      "title": "Intent Id",
+      "type": "string"
+    },
+    "priority": {
+      "$ref": "#/$defs/ActionPriority",
+      "default": "medium"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "related_evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Related Evidence Ids",
+      "type": "array"
+    },
+    "requested_by": {
+      "title": "Requested By",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ActionStatus",
+      "default": "draft"
+    },
+    "target_resource": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Target Resource"
+    }
+  },
+  "required": [
+    "intent_id",
+    "case_id",
+    "action_type",
+    "action_details",
+    "reason",
+    "requested_by"
+  ],
+  "title": "ActionIntent",
+  "type": "object"
 }

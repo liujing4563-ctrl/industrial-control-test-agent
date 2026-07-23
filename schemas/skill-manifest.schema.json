@@ -1,17 +1,67 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/skill-manifest.schema.json",
-  "title": "SkillManifest",
-  "type": "object",
+  "additionalProperties": false,
   "properties": {
-    "skillId": {"type": "string"},
-    "name": {"type": "string"},
-    "version": {"type": "string"},
-    "description": {"type": "string"},
-    "inputs": {"type": "array", "items": {"type": "string"}},
-    "outputs": {"type": "array", "items": {"type": "string"}},
-    "allowedTools": {"type": "array", "items": {"type": "string"}}
+    "allowed_tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Tools",
+      "type": "array"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "inputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "outputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Outputs",
+      "type": "array"
+    },
+    "owner": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner"
+    },
+    "skill_id": {
+      "minLength": 1,
+      "title": "Skill Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
   },
-  "required": ["skillId", "name", "version", "description"],
-  "additionalProperties": false
+  "required": [
+    "skill_id",
+    "name",
+    "version",
+    "description",
+    "inputs",
+    "outputs",
+    "allowed_tools"
+  ],
+  "title": "SkillManifest",
+  "type": "object"
 }

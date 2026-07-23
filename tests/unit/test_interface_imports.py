@@ -1,22 +1,43 @@
-import unittest
+from industrial_test_agent.agent_runtime import (
+    AgentRuntime,
+    CheckpointEnvelope,
+    Checkpointer,
+    GraphRunner,
+    JsonCheckpointer,
+)
+from industrial_test_agent.domain import (
+    ActionIntent,
+    CaseState,
+    Evidence,
+    Finding,
+    Hypothesis,
+    Observation,
+)
+from industrial_test_agent.evidence import EvidenceStoreProtocol
+from industrial_test_agent.policy import PolicyResult, PolicyValidatorProtocol
+from industrial_test_agent.runner import Runner
+from industrial_test_agent.skills import CapabilityPackManifest
 
-import industrial_test_agent.agent_runtime.interfaces
-import industrial_test_agent.agents.base
-import industrial_test_agent.policy.interfaces
-import industrial_test_agent.runner.interfaces
-import industrial_test_agent.evidence.interfaces
-import industrial_test_agent.mcp.gateway.interfaces
 
-
-class TestImports(unittest.TestCase):
-    def test_interfaces_import(self):
-        self.assertIsNotNone(industrial_test_agent.agent_runtime.interfaces)
-        self.assertIsNotNone(industrial_test_agent.agents.base)
-        self.assertIsNotNone(industrial_test_agent.policy.interfaces)
-        self.assertIsNotNone(industrial_test_agent.runner.interfaces)
-        self.assertIsNotNone(industrial_test_agent.evidence.interfaces)
-        self.assertIsNotNone(industrial_test_agent.mcp.gateway.interfaces)
-
-
-if __name__ == "__main__":
-    unittest.main()
+def test_public_contracts_import() -> None:
+    assert all(
+        contract is not None
+        for contract in (
+            ActionIntent,
+            AgentRuntime,
+            CapabilityPackManifest,
+            CaseState,
+            CheckpointEnvelope,
+            Checkpointer,
+            Evidence,
+            EvidenceStoreProtocol,
+            Finding,
+            GraphRunner,
+            Hypothesis,
+            JsonCheckpointer,
+            Observation,
+            PolicyResult,
+            PolicyValidatorProtocol,
+            Runner,
+        )
+    )

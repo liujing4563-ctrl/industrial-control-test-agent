@@ -9,11 +9,11 @@ from typing import Any, Dict
 
 from industrial_test_agent.agent_runtime.state import CaseGraphState
 from industrial_test_agent.agents.mock_agent import MockAgent
-from industrial_test_agent.policy.validator import PolicyValidator
-from industrial_test_agent.runner.mock_runner import MockRunner
-from industrial_test_agent.evidence.in_memory_store import EvidenceStore
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.evidence.interfaces import EvidenceStoreProtocol
+from industrial_test_agent.policy.interfaces import PolicyValidatorProtocol
+from industrial_test_agent.runner.interfaces import Runner
 
 
 _SENSITIVE_VALUE = re.compile(
@@ -28,9 +28,9 @@ _LOCAL_PATH = re.compile(
 @dataclass(frozen=True)
 class RuntimeContext:
     agent: MockAgent
-    policy: PolicyValidator
-    runner: MockRunner
-    evidence_store: EvidenceStore
+    policy: PolicyValidatorProtocol
+    runner: Runner
+    evidence_store: EvidenceStoreProtocol
     max_steps: int
     required_evidence_count: int
 

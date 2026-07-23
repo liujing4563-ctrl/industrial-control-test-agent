@@ -1,0 +1,298 @@
+{
+  "$defs": {
+    "CheckpointGraphState": {
+      "additionalProperties": false,
+      "description": "Validated serialized representation of CaseGraphState.",
+      "properties": {
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "goal": {
+          "minLength": 1,
+          "title": "Goal",
+          "type": "string"
+        },
+        "hypothesis_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hypothesis Ids",
+          "type": "array"
+        },
+        "last_execution_success": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Execution Success"
+        },
+        "latest_observation": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latest Observation"
+        },
+        "latest_observation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Latest Observation Id"
+        },
+        "next_node": {
+          "anyOf": [
+            {
+              "enum": [
+                "initialize_case",
+                "propose_action",
+                "validate_action",
+                "execute_action",
+                "record_observation",
+                "decide_next",
+                "finalize_case"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Node"
+        },
+        "policy_decision": {
+          "anyOf": [
+            {
+              "enum": [
+                "allowed",
+                "rejected",
+                "approval_required"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Decision"
+        },
+        "policy_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Reason"
+        },
+        "proposed_action": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Proposed Action"
+        },
+        "proposed_action_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Proposed Action Id"
+        },
+        "remaining_steps": {
+          "minimum": 0,
+          "title": "Remaining Steps",
+          "type": "integer"
+        },
+        "replan_count": {
+          "minimum": 0,
+          "title": "Replan Count",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "initialized",
+            "planning",
+            "validation",
+            "execution",
+            "diagnosis",
+            "replanning",
+            "completed",
+            "escalated",
+            "rejected"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "termination_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Termination Reason"
+        }
+      },
+      "required": [
+        "case_id",
+        "goal",
+        "stage",
+        "proposed_action_id",
+        "proposed_action",
+        "latest_observation_id",
+        "latest_observation",
+        "evidence_ids",
+        "hypothesis_ids",
+        "remaining_steps",
+        "replan_count",
+        "last_execution_success",
+        "termination_reason",
+        "policy_decision",
+        "policy_reason",
+        "next_node"
+      ],
+      "title": "CheckpointGraphState",
+      "type": "object"
+    },
+    "CheckpointMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id"
+      ],
+      "title": "CheckpointMetadata",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "observation_id": {
+          "minLength": 1,
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "observation_id",
+        "case_id",
+        "source",
+        "content_hash"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Self-contained state and Evidence snapshot used for recovery.",
+  "properties": {
+    "checkpoint_version": {
+      "const": "1.0",
+      "title": "Checkpoint Version",
+      "type": "string"
+    },
+    "evidence_snapshot": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence Snapshot",
+      "type": "array"
+    },
+    "graph_state": {
+      "$ref": "#/$defs/CheckpointGraphState"
+    },
+    "metadata": {
+      "$ref": "#/$defs/CheckpointMetadata"
+    }
+  },
+  "required": [
+    "checkpoint_version",
+    "graph_state",
+    "metadata"
+  ],
+  "title": "CheckpointEnvelope",
+  "type": "object"
+}

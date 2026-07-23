@@ -1,19 +1,133 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/capability-pack.schema.json",
-  "title": "CapabilityPack",
-  "type": "object",
-  "properties": {
-    "capabilityPackId": {"type": "string"},
-    "name": {"type": "string"},
-    "version": {"type": "string"},
-    "domain": {"type": "string"},
-    "owner": {"type": "string"},
-    "status": {"type": "string"},
-    "riskLevel": {"type": "string"},
-    "requiredMcpTools": {"type": "array", "items": {"type": "string"}},
-    "evidenceRequirements": {"type": "array", "items": {"type": "string"}}
+  "$defs": {
+    "CapabilityPackStatus": {
+      "enum": [
+        "draft",
+        "validated",
+        "approved",
+        "deprecated"
+      ],
+      "title": "CapabilityPackStatus",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
   },
-  "required": ["capabilityPackId", "name", "version", "domain", "owner", "status"],
-  "additionalProperties": false
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Platform-owned manifest shape; domain values remain domain-owned.",
+  "properties": {
+    "approver": {
+      "title": "Approver",
+      "type": "string"
+    },
+    "capability_pack_id": {
+      "minLength": 1,
+      "title": "Capability Pack Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "domain": {
+      "title": "Domain",
+      "type": "string"
+    },
+    "evidence_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence Requirements",
+      "type": "array"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "owner": {
+      "title": "Owner",
+      "type": "string"
+    },
+    "permissions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Permissions",
+      "type": "array"
+    },
+    "regression_requirements": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Regression Requirements",
+      "type": "array"
+    },
+    "required_mcp_tools": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Mcp Tools",
+      "type": "array"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "status": {
+      "$ref": "#/$defs/CapabilityPackStatus"
+    },
+    "success_criteria": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Success Criteria",
+      "type": "array"
+    },
+    "supported_devices": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supported Devices",
+      "type": "array"
+    },
+    "termination_criteria": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Termination Criteria",
+      "type": "array"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "capability_pack_id",
+    "name",
+    "version",
+    "domain",
+    "owner",
+    "approver",
+    "status",
+    "risk_level",
+    "description",
+    "supported_devices",
+    "required_mcp_tools",
+    "permissions",
+    "evidence_requirements",
+    "success_criteria",
+    "termination_criteria",
+    "regression_requirements"
+  ],
+  "title": "CapabilityPackManifest",
+  "type": "object"
 }

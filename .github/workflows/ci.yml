@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +28,9 @@ jobs:
 
       - name: Ruff
         run: ruff check .
+
+      - name: Contract drift
+        run: python -m industrial_test_agent.contracts.json_schema --check
 
       - name: Compile check
         run: python -m compileall src

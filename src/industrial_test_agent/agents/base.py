@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
 
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.case_state import CaseState

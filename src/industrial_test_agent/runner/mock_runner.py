@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from industrial_test_agent.domain.action_intent import ActionIntent
 from industrial_test_agent.domain.observation import Observation

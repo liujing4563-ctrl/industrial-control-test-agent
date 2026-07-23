@@ -10,7 +10,11 @@ from typing import Any, Dict
 from industrial_test_agent.agent_runtime.state import CaseGraphState
 from industrial_test_agent.agents.mock_agent import MockAgent
 from industrial_test_agent.domain.action_intent import ActionIntent
-from industrial_test_agent.domain.observation import Observation
+from industrial_test_agent.domain.observation import (
+    Observation,
+    ObservationSourceType,
+    ObservationStatus,
+)
 from industrial_test_agent.evidence.interfaces import EvidenceStoreProtocol
 from industrial_test_agent.policy.interfaces import PolicyValidatorProtocol
 from industrial_test_agent.runner.interfaces import Runner
@@ -41,11 +45,12 @@ def initialize_case(
     return {
         "stage": "planning",
         "remaining_steps": context.max_steps,
+        "action_ids": [],
+        "observation_ids": [],
         "evidence_ids": [],
-        "hypothesis_ids": [],
-        "proposed_action_id": None,
-        "proposed_action": None,
-        "latest_observation_id": None,
+        "hypotheses": [],
+        "findings": [],
+        "active_action": None,
         "latest_observation": None,
         "last_execution_success": None,
         "replan_count": 0,
@@ -58,19 +63,13 @@ def initialize_case(
 def propose_action(
     state: CaseGraphState, context: RuntimeContext
 ) -> Dict[str, Any]:
-    from industrial_test_agent.domain.case_state import CaseState
-
-    case = CaseState(
-        case_id=state["case_id"],
-        current_phase=state["stage"],
-        test_objective=state["goal"],
-    )
-
-    intent = context.agent.propose(case)
+    intent = context.agent.propose(state)
+    action_ids = list(state.action_ids)
+    if intent.action_id not in action_ids:
+        action_ids.append(intent.action_id)
     return {
-        "proposed_action_id": intent.intent_id,
-        "proposed_action": intent.model_dump(mode="json"),
-        "latest_observation_id": None,
+        "active_action": intent,
+        "action_ids": action_ids,
         "latest_observation": None,
         "last_execution_success": None,
         "policy_decision": None,
@@ -82,18 +81,11 @@ def propose_action(
 def validate_action(
     state: CaseGraphState, context: RuntimeContext
 ) -> Dict[str, Any]:
-    from industrial_test_agent.domain.case_state import CaseState
-
     intent = _get_current_intent(state)
-
-    case = CaseState(
-        case_id=state["case_id"],
-        current_phase=state["stage"],
-    )
 
     remaining_steps = state.get("remaining_steps", context.max_steps)
     result = context.policy.validate(
-        case,
+        state,
         intent,
         steps_taken=context.max_steps - remaining_steps,
         remaining_call_budget=remaining_steps,
@@ -120,26 +112,28 @@ def execute_action(
         observation = Observation(
             observation_id=f"obs-{uuid.uuid4().hex[:8]}",
             case_id=intent.case_id,
-            source="agent_runtime",
-            source_type="runtime",
-            payload={
-                "action_id": intent.intent_id,
-                "success": False,
-                "status": "failed",
-                "failure_kind": "execution_failed",
-                "error_code": error_code,
-                "error_message": _sanitize_error_message(exc),
+            action_id=intent.action_id,
+            tool_id=intent.capability_id,
+            status=ObservationStatus.EXECUTION_FAILED,
+            success=False,
+            error_code=error_code,
+            error_message=_sanitize_error_message(exc),
+            source_type=ObservationSourceType.RUNTIME,
+            metadata={
+                "source": "agent_runtime",
+                "schema_id": "observation",
             },
-            schema_id="observation",
-            related_action_intent_id=intent.intent_id,
         )
     else:
         observation = _normalize_failure_kind(observation)
 
+    observation_ids = list(state.observation_ids)
+    if observation.observation_id not in observation_ids:
+        observation_ids.append(observation.observation_id)
     return {
-        "latest_observation_id": observation.observation_id,
-        "latest_observation": observation.model_dump(mode="json"),
-        "last_execution_success": bool(observation.payload.get("success", False)),
+        "latest_observation": observation,
+        "observation_ids": observation_ids,
+        "last_execution_success": observation.success,
         "remaining_steps": max(state.get("remaining_steps", 0) - 1, 0),
         "stage": "execution",
     }
@@ -170,13 +164,11 @@ def decide_next(
 
     if not execution_succeeded:
         observation = _get_latest_observation(state)
-        failure_kind = observation.payload.get(
-            "failure_kind", "execution_failed"
-        )
+        failure_kind = observation.status
         if remaining <= 0:
             failure_label = (
                 "test failure"
-                if failure_kind == "test_failed"
+                if failure_kind is ObservationStatus.TEST_FAILED
                 else "runner failure"
             )
             return {
@@ -224,36 +216,30 @@ def finalize_case(
 
 
 def _get_current_intent(state: CaseGraphState) -> ActionIntent:
-    payload = state.get("proposed_action")
-    if payload is None:
+    if state.active_action is None:
         raise RuntimeError("No ActionIntent is available in graph state")
-    return ActionIntent.model_validate(payload)
+    return state.active_action
 
 
 def _get_latest_observation(state: CaseGraphState) -> Observation:
-    payload = state.get("latest_observation")
-    if payload is None:
+    if state.latest_observation is None:
         raise RuntimeError("No Observation is available in graph state")
-    return Observation.model_validate(payload)
+    return state.latest_observation
 
 
 def _normalize_failure_kind(observation: Observation) -> Observation:
     """Classify unsuccessful Runner responses without changing successful data."""
-    payload = dict(observation.payload)
-    if bool(payload.get("success", False)):
+    if observation.success:
         return observation
-
-    failure_kind = payload.get("failure_kind")
-    if failure_kind not in {"execution_failed", "test_failed"}:
-        failure_kind = (
-            "test_failed"
-            if payload.get("status") == "completed"
-            else "execution_failed"
-        )
-    payload["failure_kind"] = failure_kind
-    if failure_kind == "execution_failed":
-        payload["status"] = "failed"
-    return observation.model_copy(update={"payload": payload}, deep=True)
+    if observation.status in {
+        ObservationStatus.EXECUTION_FAILED,
+        ObservationStatus.TEST_FAILED,
+    }:
+        return observation
+    return observation.model_copy(
+        update={"status": ObservationStatus.EXECUTION_FAILED},
+        deep=True,
+    )
 
 
 def _sanitize_error_message(exc: Exception) -> str:

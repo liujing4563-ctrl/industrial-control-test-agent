@@ -1,4 +1,18 @@
 {
+  "$defs": {
+    "HypothesisStatus": {
+      "enum": [
+        "open",
+        "supported",
+        "contradicted",
+        "confirmed",
+        "rejected"
+      ],
+      "title": "HypothesisStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:industrial-test-agent:schema:hypothesis:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
@@ -8,20 +22,21 @@
       "type": "string"
     },
     "confidence": {
+      "maximum": 1,
+      "minimum": 0,
       "title": "Confidence",
       "type": "number"
+    },
+    "contradicting_evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Contradicting Evidence Ids",
+      "type": "array"
     },
     "created_at": {
       "format": "date-time",
       "title": "Created At",
-      "type": "string"
-    },
-    "created_by": {
-      "title": "Created By",
-      "type": "string"
-    },
-    "description": {
-      "title": "Description",
       "type": "string"
     },
     "hypothesis_id": {
@@ -29,18 +44,38 @@
       "title": "Hypothesis Id",
       "type": "string"
     },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "statement": {
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
     "status": {
-      "default": "open",
-      "title": "Status",
+      "$ref": "#/$defs/HypothesisStatus",
+      "default": "open"
+    },
+    "supporting_evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supporting Evidence Ids",
+      "type": "array"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
       "type": "string"
     }
   },
   "required": [
     "hypothesis_id",
     "case_id",
-    "description",
-    "confidence",
-    "created_by"
+    "statement",
+    "confidence"
   ],
   "title": "Hypothesis",
   "type": "object"

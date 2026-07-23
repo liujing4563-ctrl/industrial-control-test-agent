@@ -19,7 +19,7 @@ def test_checkpoint_envelope_contains_version_state_evidence_and_metadata() -> N
 
     payload = json.loads(runner.checkpoint(paused))
 
-    assert payload["checkpoint_version"] == "1.0"
+    assert payload["checkpoint_version"] == "2.0"
     assert payload["metadata"]["case_id"] == "case-envelope"
     assert payload["graph_state"]["evidence_ids"]
     assert [item["evidence_id"] for item in payload["evidence_snapshot"]] == (

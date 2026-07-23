@@ -1,23 +1,47 @@
 {
+  "$defs": {
+    "ObservationSourceType": {
+      "enum": [
+        "mock",
+        "runtime",
+        "mcp",
+        "simulator",
+        "hardware"
+      ],
+      "title": "ObservationSourceType",
+      "type": "string"
+    },
+    "ObservationStatus": {
+      "enum": [
+        "policy_rejected",
+        "execution_failed",
+        "test_failed",
+        "succeeded"
+      ],
+      "title": "ObservationStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:industrial-test-agent:schema:observation:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "action_id": {
+      "minLength": 1,
+      "title": "Action Id",
+      "type": "string"
+    },
     "case_id": {
       "minLength": 1,
       "title": "Case Id",
       "type": "string"
     },
-    "observation_id": {
-      "minLength": 1,
-      "title": "Observation Id",
-      "type": "string"
-    },
-    "payload": {
+    "data": {
       "additionalProperties": true,
-      "title": "Payload",
+      "title": "Data",
       "type": "object"
     },
-    "related_action_intent_id": {
+    "error_code": {
       "anyOf": [
         {
           "type": "string"
@@ -27,33 +51,59 @@
         }
       ],
       "default": null,
-      "title": "Related Action Intent Id"
+      "title": "Error Code"
     },
-    "schema_id": {
-      "title": "Schema Id",
+    "error_message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Message"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "observation_id": {
+      "minLength": 1,
+      "title": "Observation Id",
       "type": "string"
     },
-    "source": {
-      "title": "Source",
+    "received_at": {
+      "format": "date-time",
+      "title": "Received At",
       "type": "string"
     },
     "source_type": {
-      "title": "Source Type",
-      "type": "string"
+      "$ref": "#/$defs/ObservationSourceType"
     },
-    "timestamp": {
-      "format": "date-time",
-      "title": "Timestamp",
+    "status": {
+      "$ref": "#/$defs/ObservationStatus"
+    },
+    "success": {
+      "title": "Success",
+      "type": "boolean"
+    },
+    "tool_id": {
+      "minLength": 1,
+      "title": "Tool Id",
       "type": "string"
     }
   },
   "required": [
     "observation_id",
     "case_id",
-    "source",
-    "source_type",
-    "payload",
-    "schema_id"
+    "action_id",
+    "tool_id",
+    "status",
+    "success",
+    "source_type"
   ],
   "title": "Observation",
   "type": "object"

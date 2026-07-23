@@ -1,4 +1,4 @@
-"""Generate checked-in JSON Schema documents from Pydantic contracts."""
+"""Generate deterministic JSON Schema files from Pydantic models."""
 
 from __future__ import annotations
 
@@ -7,44 +7,20 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
-
-from industrial_test_agent.agent_runtime.checkpoint import CheckpointEnvelope
-from industrial_test_agent.domain.action_intent import ActionIntent
-from industrial_test_agent.domain.case_state import CaseState
-from industrial_test_agent.domain.evidence import Evidence
-from industrial_test_agent.domain.finding import Finding
-from industrial_test_agent.domain.hypothesis import Hypothesis
-from industrial_test_agent.domain.observation import Observation
-from industrial_test_agent.mcp.models import ToolCapability
-from industrial_test_agent.policy.decisions import PolicyResult
-from industrial_test_agent.skills.models import (
-    CapabilityPackManifest,
-    SkillManifest,
-)
+from industrial_test_agent.schemas.registry import SCHEMA_MODELS
 
 
 JSON_SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"
-SCHEMA_MODELS: dict[str, type[BaseModel]] = {
-    "action-intent.schema.json": ActionIntent,
-    "capability-pack.schema.json": CapabilityPackManifest,
-    "case-state.schema.json": CaseState,
-    "checkpoint-envelope.schema.json": CheckpointEnvelope,
-    "evidence.schema.json": Evidence,
-    "finding.schema.json": Finding,
-    "hypothesis.schema.json": Hypothesis,
-    "observation.schema.json": Observation,
-    "policy-result.schema.json": PolicyResult,
-    "skill-manifest.schema.json": SkillManifest,
-    "tool-capability.schema.json": ToolCapability,
-}
+SCHEMA_ID_PREFIX = "urn:industrial-test-agent:schema:"
 
 
 def generate_schema_documents() -> dict[str, dict[str, Any]]:
     documents: dict[str, dict[str, Any]] = {}
     for filename, model in SCHEMA_MODELS.items():
+        schema_name = filename.removesuffix(".schema.json")
         schema = model.model_json_schema(mode="validation")
         documents[filename] = {
+            "$id": f"{SCHEMA_ID_PREFIX}{schema_name}:1.0",
             "$schema": JSON_SCHEMA_DIALECT,
             **schema,
         }
@@ -62,6 +38,10 @@ def render_schema(document: dict[str, Any]) -> str:
 
 def write_schema_documents(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+    expected_files = set(SCHEMA_MODELS)
+    for path in output_dir.glob("*.json"):
+        if path.name not in expected_files:
+            path.unlink()
     for filename, document in generate_schema_documents().items():
         (output_dir / filename).write_text(
             render_schema(document),
@@ -71,13 +51,8 @@ def write_schema_documents(output_dir: Path) -> None:
 
 def find_schema_drift(output_dir: Path) -> list[str]:
     expected = generate_schema_documents()
-    drift: list[str] = []
     actual_files = {path.name for path in output_dir.glob("*.json")}
-    expected_files = set(expected)
-
-    for filename in sorted(actual_files ^ expected_files):
-        drift.append(filename)
-
+    drift = sorted(actual_files ^ set(expected))
     for filename, document in expected.items():
         path = output_dir / filename
         if path.is_file() and path.read_text(encoding="utf-8") != render_schema(
@@ -108,7 +83,6 @@ def main() -> None:
         if drift:
             parser.error(f"JSON Schema 存在漂移：{', '.join(drift)}")
         return
-
     write_schema_documents(args.output_dir)
 
 

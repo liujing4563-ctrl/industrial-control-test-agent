@@ -6,6 +6,7 @@ authors = [{name = "liujing4563-ctrl", email = "noreply@example.com"}]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "jsonschema>=4.20",
     "pydantic>=2.0",
 ]
 

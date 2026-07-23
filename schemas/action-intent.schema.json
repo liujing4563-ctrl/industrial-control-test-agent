@@ -1,64 +1,34 @@
 {
   "$defs": {
-    "ActionPriority": {
+    "RiskLevel": {
       "enum": [
         "low",
         "medium",
         "high",
         "critical"
       ],
-      "title": "ActionPriority",
-      "type": "string"
-    },
-    "ActionStatus": {
-      "enum": [
-        "draft",
-        "submitted",
-        "approved",
-        "rejected",
-        "executing",
-        "completed"
-      ],
-      "title": "ActionStatus",
+      "title": "RiskLevel",
       "type": "string"
     }
   },
+  "$id": "urn:industrial-test-agent:schema:action-intent:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "action_details": {
-      "additionalProperties": true,
-      "title": "Action Details",
-      "type": "object"
-    },
-    "action_type": {
-      "title": "Action Type",
+    "action_id": {
+      "minLength": 1,
+      "title": "Action Id",
       "type": "string"
     },
-    "approved_at": {
-      "anyOf": [
-        {
-          "format": "date-time",
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Approved At"
+    "arguments": {
+      "additionalProperties": true,
+      "title": "Arguments",
+      "type": "object"
     },
-    "approved_by": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Approved By"
+    "capability_id": {
+      "minLength": 1,
+      "title": "Capability Id",
+      "type": "string"
     },
     "case_id": {
       "minLength": 1,
@@ -70,54 +40,37 @@
       "title": "Created At",
       "type": "string"
     },
-    "intent_id": {
+    "idempotency_key": {
       "minLength": 1,
-      "title": "Intent Id",
+      "title": "Idempotency Key",
       "type": "string"
     },
-    "priority": {
-      "$ref": "#/$defs/ActionPriority",
-      "default": "medium"
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
     },
     "reason": {
+      "default": "",
       "title": "Reason",
       "type": "string"
     },
-    "related_evidence_ids": {
-      "items": {
-        "type": "string"
-      },
-      "title": "Related Evidence Ids",
-      "type": "array"
-    },
     "requested_by": {
+      "minLength": 1,
       "title": "Requested By",
       "type": "string"
     },
-    "status": {
-      "$ref": "#/$defs/ActionStatus",
-      "default": "draft"
-    },
-    "target_resource": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Target Resource"
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "medium"
     }
   },
   "required": [
-    "intent_id",
+    "action_id",
     "case_id",
-    "action_type",
-    "action_details",
-    "reason",
-    "requested_by"
+    "capability_id",
+    "requested_by",
+    "idempotency_key"
   ],
   "title": "ActionIntent",
   "type": "object"

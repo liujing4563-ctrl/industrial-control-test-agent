@@ -1,13 +1,29 @@
 {
+  "$defs": {
+    "EvidenceType": {
+      "enum": [
+        "tool_observation"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:industrial-test-agent:schema:evidence:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "action_id": {
+      "minLength": 1,
+      "title": "Action Id",
+      "type": "string"
+    },
     "case_id": {
       "minLength": 1,
       "title": "Case Id",
       "type": "string"
     },
     "content_hash": {
+      "minLength": 1,
       "title": "Content Hash",
       "type": "string"
     },
@@ -21,17 +37,13 @@
       "title": "Evidence Id",
       "type": "string"
     },
+    "evidence_type": {
+      "$ref": "#/$defs/EvidenceType"
+    },
     "idempotency_key": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Idempotency Key"
+      "minLength": 1,
+      "title": "Idempotency Key",
+      "type": "string"
     },
     "metadata": {
       "additionalProperties": true,
@@ -43,6 +55,11 @@
       "title": "Observation Id",
       "type": "string"
     },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
     "source": {
       "title": "Source",
       "type": "string"
@@ -50,10 +67,14 @@
   },
   "required": [
     "evidence_id",
-    "observation_id",
     "case_id",
+    "observation_id",
+    "action_id",
+    "evidence_type",
+    "payload",
     "source",
-    "content_hash"
+    "content_hash",
+    "idempotency_key"
   ],
   "title": "Evidence",
   "type": "object"

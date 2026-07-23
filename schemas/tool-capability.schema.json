@@ -1,44 +1,107 @@
 {
+  "$defs": {
+    "RetryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "backoff_seconds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Backoff Seconds",
+          "type": "number"
+        },
+        "max_attempts": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Max Attempts",
+          "type": "integer"
+        }
+      },
+      "title": "RetryPolicy",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "SideEffectType": {
+      "enum": [
+        "read_only",
+        "test_write",
+        "external_side_effect"
+      ],
+      "title": "SideEffectType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:industrial-test-agent:schema:tool-capability:1.0",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "capability_id": {
+      "minLength": 1,
+      "title": "Capability Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "display_name": {
+      "minLength": 1,
+      "title": "Display Name",
+      "type": "string"
+    },
     "input_schema": {
       "additionalProperties": true,
       "title": "Input Schema",
       "type": "object"
     },
-    "name": {
-      "title": "Name",
-      "type": "string"
-    },
-    "output_schema": {
+    "metadata": {
       "additionalProperties": true,
-      "title": "Output Schema",
+      "title": "Metadata",
       "type": "object"
     },
-    "permissions": {
+    "requires_approval": {
+      "title": "Requires Approval",
+      "type": "boolean"
+    },
+    "retry_policy": {
+      "$ref": "#/$defs/RetryPolicy"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel"
+    },
+    "side_effect_type": {
+      "$ref": "#/$defs/SideEffectType"
+    },
+    "tags": {
       "items": {
         "type": "string"
       },
-      "title": "Permissions",
+      "title": "Tags",
       "type": "array"
     },
-    "tool_id": {
-      "minLength": 1,
-      "title": "Tool Id",
-      "type": "string"
-    },
-    "transport": {
-      "title": "Transport",
-      "type": "string"
+    "timeout_seconds": {
+      "default": 30,
+      "exclusiveMinimum": 0,
+      "title": "Timeout Seconds",
+      "type": "number"
     }
   },
   "required": [
-    "tool_id",
-    "name",
-    "transport",
+    "capability_id",
+    "display_name",
+    "description",
     "input_schema",
-    "output_schema"
+    "risk_level",
+    "requires_approval",
+    "side_effect_type"
   ],
   "title": "ToolCapability",
   "type": "object"

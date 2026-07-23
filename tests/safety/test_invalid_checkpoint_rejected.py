@@ -102,8 +102,7 @@ def test_checkpoint_cannot_mark_observed_action_for_execution_again() -> None:
 
 def test_observation_without_action_intent_is_rejected() -> None:
     payload = _checkpoint_payload(pause_after=4)
-    payload["graph_state"]["proposed_action_id"] = None
-    payload["graph_state"]["proposed_action"] = None
+    payload["graph_state"]["active_action"] = None
 
-    with pytest.raises(ValueError, match="Observation requires its ActionIntent"):
+    with pytest.raises(ValueError, match="active ActionIntent"):
         GraphRunner().resume(payload)

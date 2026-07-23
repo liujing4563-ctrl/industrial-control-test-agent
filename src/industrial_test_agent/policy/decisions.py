@@ -1,11 +1,9 @@
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
 from industrial_test_agent.contracts import ContractModel
-
-
-PolicyDecision = Literal["allowed", "rejected", "approval_required"]
+from industrial_test_agent.domain.enums import PolicyDecision
 
 
 class PolicyResult(ContractModel):

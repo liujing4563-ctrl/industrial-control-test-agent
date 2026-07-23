@@ -110,8 +110,7 @@ class TestGraphRunner:
         state = runner.run("case-001", "test")
         evidence = store.get(state["evidence_ids"][0])
         assert evidence is not None
-        observation = evidence.metadata["observation"]
-        assert observation["related_action_intent_id"] == state["proposed_action_id"]
+        assert evidence.action_id == state.active_action.action_id
 
     def test_runner_failure_enters_replan_then_recovers(self):
         runner = GraphRunner(
